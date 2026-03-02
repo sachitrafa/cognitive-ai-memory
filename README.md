@@ -1,5 +1,7 @@
 # YourMemory
 
+![YourMemory Demo](demo.gif)
+
 Persistent, decaying memory for AI agents — backed by PostgreSQL + pgvector.
 
 Memories fade like real ones do. Frequently recalled memories stay strong. Forgotten ones are pruned automatically. Claude decides what to remember and how important it is.
