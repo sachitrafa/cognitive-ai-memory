@@ -87,24 +87,34 @@ Next session:
 
 ## Quick Start
 
-### Option A — Docker (recommended)
+### Step 1 — Install prerequisites
 
-Requires Ollama running on the host.
-
+**Ollama** (local LLM + embeddings):
 ```bash
-git clone https://github.com/yourusername/yourmemory
-cd yourmemory
-cp .env.example .env
-docker compose up
-python -m src.db.migrate   # run once to create tables
+# Mac
+brew install ollama
+ollama serve   # start the server
+
+# Pull required models
+ollama pull nomic-embed-text   # embeddings
+ollama pull llama3.2:3b        # classification
 ```
 
-### Option B — Local
+**PostgreSQL with pgvector:**
+```bash
+# Mac
+brew install postgresql@16
+brew install pgvector
+brew services start postgresql@16
+
+# Create the database
+createdb yourmemory
+```
+
+### Step 2 — Clone and run
 
 ```bash
-# Prerequisites: Python 3.11, PostgreSQL with pgvector, Ollama
-
-git clone https://github.com/yourusername/yourmemory
+git clone https://github.com/sachitrafa/yourmemory
 cd yourmemory
 
 python3.11 -m venv venv311
@@ -112,16 +122,39 @@ source venv311/bin/activate
 pip install -r requirements.txt
 python -m spacy download en_core_web_sm
 
-# Ollama models
-ollama pull llama3.2:3b
-ollama pull nomic-embed-text
+cp .env.example .env          # DATABASE_URL is pre-filled for local Postgres
 
-cp .env.example .env
-# Edit DATABASE_URL in .env
-
-python -m src.db.migrate   # create tables
-uvicorn src.app:app --reload
+python -m src.db.migrate      # create tables (run once)
+uvicorn src.app:app --reload  # start the API
 ```
+
+### Step 3 — Connect to Claude Code
+
+Add to `~/.claude/settings.json`:
+```json
+{
+  "mcpServers": {
+    "yourmemory": {
+      "command": "/path/to/yourmemory/venv311/bin/python3.11",
+      "args": ["/path/to/yourmemory/memory_mcp.py"]
+    }
+  }
+}
+```
+
+Reload Claude Code (`Cmd+Shift+P` → `Developer: Reload Window`). Done.
+
+### Option: Docker (skip Steps 1 & 2)
+
+If you have Docker, this replaces Steps 1 and 2 entirely:
+```bash
+git clone https://github.com/sachitrafa/yourmemory
+cd yourmemory
+docker compose up
+python -m src.db.migrate
+```
+
+> Note: Ollama still needs to run on your host machine for embeddings.
 
 ---
 
