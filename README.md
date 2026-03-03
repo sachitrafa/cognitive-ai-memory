@@ -148,7 +148,21 @@ Add to `~/.claude/settings.json` (replace `INSTALL_PATH` with the output above):
 }
 ```
 
-Reload Claude Code (`Cmd+Shift+P` → `Developer: Reload Window`). Done.
+Reload Claude Code (`Cmd+Shift+P` → `Developer: Reload Window`).
+
+### Step 4 — Add memory instructions to your project
+
+Copy `sample_CLAUDE.md` into your project root as `CLAUDE.md`, then fill in your details:
+
+```bash
+cp sample_CLAUDE.md /path/to/your/project/CLAUDE.md
+```
+
+Open it and replace the two placeholders:
+- `YOUR_NAME` → your name (e.g. `Alice`)
+- `YOUR_USER_ID` → your user ID (e.g. `alice`) — used to namespace memories
+
+Claude will now follow the recall → store → update workflow automatically on every task in that project.
 
 ### Option: Docker (skip Steps 1 & 2)
 

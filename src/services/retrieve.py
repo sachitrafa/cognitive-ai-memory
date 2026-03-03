@@ -9,7 +9,7 @@ from .decay import compute_strength
 load_dotenv()
 
 # Memories below this are excluded from results entirely
-SIMILARITY_THRESHOLD = 0.65
+SIMILARITY_THRESHOLD = 0.50
 # Memories must exceed this to get recall_count reinforced
 REINFORCE_THRESHOLD = 0.75
 
