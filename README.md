@@ -114,8 +114,8 @@ createdb yourmemory
 ### Step 2 — Clone and run
 
 ```bash
-git clone https://github.com/sachitrafa/yourmemory
-cd yourmemory
+git clone https://github.com/sachitrafa/cognitive-ai-memory
+cd cognitive-ai-memory
 
 python3.11 -m venv venv311
 source venv311/bin/activate
@@ -168,8 +168,8 @@ Claude will now follow the recall → store → update workflow automatically on
 
 If you have Docker, this replaces Steps 1 and 2 entirely:
 ```bash
-git clone https://github.com/sachitrafa/yourmemory
-cd yourmemory
+git clone https://github.com/sachitrafa/cognitive-ai-memory
+cd cognitive-ai-memory
 docker compose up
 python -m src.db.migrate
 ```

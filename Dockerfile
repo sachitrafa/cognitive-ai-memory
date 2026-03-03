@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-LABEL io.modelcontextprotocol.server.name="io.github.sachitrafa/yourmemory"
+LABEL io.modelcontextprotocol.server.name="io.github.sachitrafa/cognitive-ai-memory"
 
 WORKDIR /app
 

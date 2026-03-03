@@ -1,16 +1,16 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.sachitrafa/yourmemory",
+  "name": "io.github.sachitrafa/cognitive-ai-memory",
   "description": "Ebbinghaus-based persistent memory for Claude. Memories decay with time, strengthen on recall.",
   "repository": {
-    "url": "https://github.com/sachitrafa/yourmemory",
+    "url": "https://github.com/sachitrafa/cognitive-ai-memory",
     "source": "github"
   },
-  "version": "1.0.0",
+  "version": "1.0.1",
   "packages": [
     {
       "registryType": "oci",
-      "identifier": "ghcr.io/sachitrafa/yourmemory:1.0.0",
+      "identifier": "ghcr.io/sachitrafa/cognitive-ai-memory:1.0.1",
       "transport": {
         "type": "stdio"
       },
