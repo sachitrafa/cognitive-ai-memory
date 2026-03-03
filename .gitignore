@@ -19,10 +19,11 @@ build/
 # macOS
 .DS_Store
 
-# IDE
+# IDE & Claude Code local config
 .vscode/
 .idea/
 *.swp
+.claude/
 
 # Logs
 *.log
