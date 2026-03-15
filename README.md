@@ -1,12 +1,24 @@
 # YourMemory
 
-![YourMemory Demo](demo.gif)
+**+16pp better recall than Mem0 on LoCoMo. 100% stale memory precision. Biologically-inspired memory decay for AI agents.**
 
-Persistent, decaying memory for Claude — backed by PostgreSQL + pgvector.
+Persistent memory for Claude that works like human memory — important things stick, forgotten things fade, outdated facts get demoted automatically.
 
-Memories fade like real ones do. Frequently recalled memories stay strong. Forgotten ones are pruned automatically. Claude decides what to remember and how important it is.
+> Early stage — feedback and ideas welcome.
 
-> Still early — ideating on where to take this next. Feedback welcome.
+---
+
+## Benchmarks
+
+Evaluated against Mem0 (free tier) on the public [LoCoMo dataset](https://github.com/snap-research/locomo) (Snap Research) — 10 conversation pairs, 200 QA pairs total.
+
+| Metric | YourMemory | Mem0 | Margin |
+|--------|:----------:|:----:|:------:|
+| LoCoMo Recall@5 *(200 QA pairs)* | **34%** | 18% | **+16pp** |
+| Stale Memory Precision *(5 contradiction pairs)* | **100%** | 0% | **+100pp** |
+| Memories pruned *(noise reduction)* | **20%** | 0% | — |
+
+Full methodology and per-sample results in [BENCHMARKS.md](BENCHMARKS.md).
 
 ---
 
@@ -17,26 +29,19 @@ Memories fade like real ones do. Frequently recalled memories stay strong. Forgo
 ```
 effective_λ = 0.16 × (1 - importance × 0.8)
 strength    = importance × e^(-effective_λ × days) × (1 + recall_count × 0.2)
+score       = cosine_similarity × strength
 ```
 
-Importance controls both the starting value and how fast a memory decays:
+Importance controls both the starting strength and the rate of decay:
 
-| importance | effective λ | survives (never recalled) |
-|------------|-------------|--------------------------|
-| 1.0        | 0.032       | ~94 days                 |
-| 0.9        | 0.045       | ~64 days                 |
-| 0.5        | 0.096       | ~24 days                 |
-| 0.2        | 0.134       | ~10 days                 |
+| importance | effective λ | survives without recall |
+|------------|-------------|------------------------|
+| 1.0 | 0.032 | ~94 days |
+| 0.9 | 0.045 | ~64 days |
+| 0.5 | 0.096 | ~24 days |
+| 0.2 | 0.134 | ~10 days |
 
-Memories recalled frequently gain `recall_count` boosts that counteract decay.
-
-### Retrieval scoring
-
-```
-score = cosine_similarity × Ebbinghaus_strength
-```
-
-Results rank by how relevant and how fresh a memory is — not just one or the other.
+Memories recalled frequently gain `recall_count` boosts that counteract decay. Memories below strength `0.05` are pruned automatically.
 
 ---
 
@@ -78,7 +83,7 @@ Reload Claude Code (`Cmd+Shift+P` → `Developer: Reload Window`).
 
 **Add memory instructions to your project:**
 
-Copy `sample_CLAUDE.md` into your project root as `CLAUDE.md` and replace the two placeholders:
+Copy `sample_CLAUDE.md` into your project root as `CLAUDE.md` and replace:
 - `YOUR_NAME` — your name (e.g. `Alice`)
 - `YOUR_USER_ID` — used to namespace memories (e.g. `alice`)
 
@@ -87,8 +92,6 @@ Claude will now follow the recall → store → update workflow automatically on
 ---
 
 ## MCP Tools
-
-Claude gets three tools:
 
 | Tool | When to call |
 |------|-------------|
@@ -115,45 +118,32 @@ Next session:
 
 ## Decay Job
 
-The decay job runs automatically every 24 hours on startup — no cron needed. Memories that decay below strength `0.05` are pruned automatically.
+Runs automatically every 24 hours on startup — no cron needed. Memories below strength `0.05` are pruned.
 
 ---
 
 ## REST API
 
-### `POST /memories` — store a memory
-
 ```bash
+# Store
 curl -X POST http://localhost:8000/memories \
   -H "Content-Type: application/json" \
   -d '{"userId":"u1","content":"Prefers dark mode","importance":0.8}'
-```
 
-### `POST /retrieve` — semantic search
-
-```bash
+# Retrieve
 curl -X POST http://localhost:8000/retrieve \
   -H "Content-Type: application/json" \
   -d '{"userId":"u1","query":"UI preferences"}'
-```
 
-### `GET /memories` — list all memories
-
-```bash
+# List all
 curl "http://localhost:8000/memories?userId=u1"
-```
 
-### `PUT /memories/{id}` — update a memory
-
-```bash
+# Update
 curl -X PUT http://localhost:8000/memories/42 \
   -H "Content-Type: application/json" \
   -d '{"content":"Prefers dark mode in all apps","importance":0.85}'
-```
 
-### `DELETE /memories/{id}` — remove a memory
-
-```bash
+# Delete
 curl -X DELETE http://localhost:8000/memories/42
 ```
 
@@ -161,11 +151,10 @@ curl -X DELETE http://localhost:8000/memories/42
 
 ## Stack
 
-- **PostgreSQL + pgvector** — vector similarity search + relational in one DB
-- **Ollama** — local embeddings (`nomic-embed-text`, 768 dims) + classification (`llama3.2:3b`)
-- **spaCy** — question detection, fact/assumption categorization
+- **PostgreSQL + pgvector** — vector similarity search
+- **Ollama** — local embeddings (`nomic-embed-text`, 768 dims)
 - **FastAPI** — REST server
-- **APScheduler** — automatic decay job (runs every 24h on startup)
+- **APScheduler** — automatic 24h decay job
 - **MCP** — Claude integration via Model Context Protocol
 
 ---
@@ -176,27 +165,28 @@ curl -X DELETE http://localhost:8000/memories/42
 Claude Code
     │
     ├── recall_memory(query)
-    │       └── embed(query) → cosine similarity → score = sim × strength → top-k
+    │       └── embed → cosine similarity → score = sim × strength → top-k
     │
     ├── store_memory(content, importance)
     │       └── is_question? → reject
     │           categorize() → fact | assumption
     │           embed() → INSERT memories
     │
-    └── update_memory(id, new_content, importance)
-            └── embed(new_content) → UPDATE memories SET content, embedding, importance
-
-REST API (FastAPI)
-    ├── POST   /memories         — store
-    ├── PUT    /memories/{id}    — update
-    ├── DELETE /memories/{id}    — delete
-    ├── GET    /memories         — list all (with live strength)
-    └── POST   /retrieve         — semantic search
+    └── update_memory(id, new_content)
+            └── embed(new_content) → UPDATE memories
 
 PostgreSQL (pgvector)
-    └── memories table
-        ├── embedding vector(768)    — cosine similarity
-        ├── importance float         — user/LLM-assigned base weight
-        ├── recall_count int         — reinforcement counter
-        └── last_accessed_at         — for Ebbinghaus decay
+    └── memories
+        ├── embedding vector(768)
+        ├── importance float
+        ├── recall_count int
+        └── last_accessed_at
 ```
+
+---
+
+## Dataset Reference
+
+Benchmarks use the [LoCoMo](https://github.com/snap-research/locomo) dataset by Snap Research — a public long-context memory benchmark for multi-session dialogue.
+
+> Maharana et al. (2024). *LoCoMo: Long Context Multimodal Benchmark for Dialogue.* Snap Research.
