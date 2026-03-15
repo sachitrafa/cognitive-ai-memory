@@ -19,6 +19,7 @@ Evaluated against Mem0 (free tier) on the public [LoCoMo dataset](https://github
 | Memories pruned *(noise reduction)* | **20%** | 0% | — |
 
 Full methodology and per-sample results in [BENCHMARKS.md](BENCHMARKS.md).
+Read the writeup: [I built memory decay for AI agents using the Ebbinghaus forgetting curve](https://dev.to/sachit_mishra_686a94d1bb5/i-built-memory-decay-for-ai-agents-using-the-ebbinghaus-forgetting-curve-1b0e)
 
 ---
 
