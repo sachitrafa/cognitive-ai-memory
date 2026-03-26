@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cognitive AI Memory | The AI Brain That Never Forgets (What Matters)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #030712;
+            color: #f3f4f6;
+            scroll-behavior: smooth;
+        }
+        .font-display { font-family: 'Space+Grotesk', sans-serif; }
+        
+        .glow-text {
+            text-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+        }
+        
+        .bg-grid {
+            background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.05) 1px, transparent 0);
+            background-size: 40px 40px;
+        }
+
+        .gradient-border {
+            position: relative;
+            border-radius: 1rem;
+            background: rgba(17, 24, 39, 0.8);
+        }
+        .gradient-border::before {
+            content: "";
+            position: absolute;
+            inset: -1px;
+            border-radius: 1rem;
+            padding: 1px;
+            background: linear-gradient(to right, #8b5cf6, #3b82f6);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .float-animation { animation: float 4s ease-in-out infinite; }
+    </style>
+</head>
+<body class="bg-grid">
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 border-b border-white/10 bg-gray-950/80 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="p-2 bg-indigo-600 rounded-lg">
+                    <i data-lucide="brain-circuit" class="w-6 h-6 text-white"></i>
+                </div>
+                <span class="font-display font-bold text-xl tracking-tight">Cognitive<span class="text-indigo-500">AI</span></span>
+            </div>
+            <div class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
+                <a href="#features" class="hover:text-white transition-colors">Features</a>
+                <a href="#how-it-works" class="hover:text-white transition-colors">How it Works</a>
+                <a href="#benchmarks" class="hover:text-white transition-colors">Benchmarks</a>
+            </div>
+            <a href="https://github.com/sachitrafa/cognitive-ai-memory" target="_blank" class="px-5 py-2 bg-white text-black rounded-full font-bold text-sm hover:bg-gray-200 transition-all flex items-center gap-2">
+                <i data-lucide="github" class="w-4 h-4"></i> Star on GitHub
+            </a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="relative pt-32 pb-20 px-6 overflow-hidden">
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full h-[600px] bg-indigo-600/10 blur-[120px] -z-10 rounded-full"></div>
+        
+        <div class="max-w-5xl mx-auto text-center">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold uppercase tracking-widest mb-8">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                </span>
+                The Future of AI Persistance
+            </div>
+            
+            <h1 class="font-display text-5xl md:text-7xl font-bold leading-tight mb-6">
+                Give your AI agents a <br/>
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400 glow-text">Human-Like Memory.</span>
+            </h1>
+            
+            <p class="text-xl text-gray-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+                Stop re-explaining yourself. Cognitive AI Memory uses the <b>Ebbinghaus Forgetting Curve</b> to store, rank, and decay memories—just like a real brain.
+            </p>
+            
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <a href="#setup" class="w-full sm:w-auto px-8 py-4 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold text-lg shadow-lg shadow-indigo-500/20 transition-all flex items-center justify-center gap-2 group">
+                    Get Started <i data-lucide="arrow-right" class="w-5 h-5 group-hover:translate-x-1 transition-transform"></i>
+                </a>
+                <div class="w-full sm:w-auto px-8 py-4 bg-gray-900 border border-white/10 rounded-xl font-mono text-sm text-gray-300 flex items-center justify-center gap-3">
+                    <span class="text-indigo-400">$</span> docker compose up -d
+                    <button onclick="copyToClipboard('docker compose up -d')" class="hover:text-white">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard Preview / Graphic -->
+            <div class="mt-20 relative mx-auto max-w-4xl gradient-border p-4 float-animation">
+                <div class="rounded-lg bg-gray-950 overflow-hidden border border-white/5 shadow-2xl">
+                    <div class="flex items-center gap-1.5 px-4 py-3 bg-gray-900/50 border-b border-white/5">
+                        <div class="w-3 h-3 rounded-full bg-red-500/50"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500/50"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500/50"></div>
+                        <div class="ml-4 text-xs text-gray-500 font-mono">memory-mcp-server --active</div>
+                    </div>
+                    <div class="p-6 text-left font-mono text-sm space-y-4">
+                        <div class="text-green-400">[INFO] Memory initialized...</div>
+                        <div class="text-indigo-300">>> User: "I'm switching my stack to Vue.js"</div>
+                        <div class="text-gray-500 italic">... Applying Ebbinghaus Decay ...</div>
+                        <div class="flex gap-4">
+                            <div class="flex-1 p-3 bg-red-500/10 border border-red-500/20 rounded-md">
+                                <span class="text-red-400 block text-xs font-bold uppercase mb-1">Decaying (Old Info)</span>
+                                <span class="text-gray-400">Memory: "Uses React for frontend"</span>
+                                <div class="mt-2 h-1 w-full bg-gray-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-red-500" style="width: 15%"></div>
+                                </div>
+                            </div>
+                            <div class="flex-1 p-3 bg-green-500/10 border border-green-500/20 rounded-md">
+                                <span class="text-green-400 block text-xs font-bold uppercase mb-1">Strengthening (New Info)</span>
+                                <span class="text-gray-300">Memory: "Uses Vue.js for frontend"</span>
+                                <div class="mt-2 h-1 w-full bg-gray-800 rounded-full overflow-hidden">
+                                    <div class="h-full bg-green-500" style="width: 100%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-gray-500">[SYNC] Retrieval score updated based on recency and relevance.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Features Section -->
+    <section id="features" class="py-24 px-6 border-t border-white/5">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-16">
+                <h2 class="font-display text-4xl font-bold mb-4">Beyond Simple Storage</h2>
+                <p class="text-gray-400">Standard RAG is static. Cognitive AI is alive.</p>
+            </div>
+            
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="p-8 rounded-2xl bg-gray-900/50 border border-white/5 hover:border-indigo-500/30 transition-all">
+                    <div class="w-12 h-12 rounded-xl bg-indigo-600/20 flex items-center justify-center mb-6 text-indigo-400">
+                        <i data-lucide="waves" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Dynamic Forgetting</h3>
+                    <p class="text-gray-400 leading-relaxed">
+                        Implemented using the <b>Ebbinghaus Forgetting Curve</b>. Memories fade naturally if not recalled, keeping your AI context clean and relevant.
+                    </p>
+                </div>
+                <!-- Feature 2 -->
+                <div class="p-8 rounded-2xl bg-gray-900/50 border border-white/5 hover:border-indigo-500/30 transition-all">
+                    <div class="w-12 h-12 rounded-xl bg-indigo-600/20 flex items-center justify-center mb-6 text-indigo-400">
+                        <i data-lucide="shield-check" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Local & Privacy-First</h3>
+                    <p class="text-gray-400 leading-relaxed">
+                        Runs entirely on your machine via Docker. No external API keys required. Your conversation history stays <b>yours</b>.
+                    </p>
+                </div>
+                <!-- Feature 3 -->
+                <div class="p-8 rounded-2xl bg-gray-900/50 border border-white/5 hover:border-indigo-500/30 transition-all">
+                    <div class="w-12 h-12 rounded-xl bg-indigo-600/20 flex items-center justify-center mb-6 text-indigo-400">
+                        <i data-lucide="server" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">MCP Ready</h3>
+                    <p class="text-gray-400 leading-relaxed">
+                        Works natively with the <b>Model Context Protocol</b>. One-click integration with Claude Code and other modern AI tools.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it Works / Benchmarks -->
+    <section id="benchmarks" class="py-24 px-6 bg-gray-950/50">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid md:grid-cols-2 gap-16 items-center">
+                <div>
+                    <h2 class="font-display text-4xl font-bold mb-6">Built for Accuracy.</h2>
+                    <p class="text-lg text-gray-400 mb-8">
+                        Most memory systems treat every fact equally, forever. We benchmarked Cognitive AI against leading memory layers.
+                    </p>
+                    
+                    <div class="space-y-6">
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="font-bold">Stale Memory Precision</span>
+                                <span class="text-indigo-400 font-bold">100%</span>
+                            </div>
+                            <div class="h-3 w-full bg-gray-800 rounded-full">
+                                <div class="h-full bg-indigo-500 rounded-full shadow-[0_0_10px_#8b5cf6]" style="width: 100%"></div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">Cognitive AI automatically prunes outdated facts.</p>
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-2">
+                                <span class="font-bold">Industry Average (Mem0/Others)</span>
+                                <span class="text-gray-500 font-bold">0%</span>
+                            </div>
+                            <div class="h-3 w-full bg-gray-800 rounded-full">
+                                <div class="h-full bg-gray-600 rounded-full" style="width: 5%"></div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">Standard systems require manual deletion of stale data.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="gradient-border p-1">
+                    <div class="bg-gray-900 rounded-xl p-8">
+                        <h4 class="text-indigo-400 font-mono text-xs uppercase font-bold tracking-widest mb-6">The Formula</h4>
+                        <div class="font-display text-2xl mb-4 italic text-center py-6 border-y border-white/5">
+                            Score = Cosine_Sim × <span class="text-indigo-400">Ebbinghaus_Strength</span>
+                        </div>
+                        <p class="text-sm text-gray-400 leading-relaxed">
+                            Memory strength is calculated using <b>time elapsed</b>, <b>initial importance</b>, and <b>recall frequency</b>. Every time you mention a topic, it gets reinforced. If you don't, it quietly fades away.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <section id="setup" class="py-24 px-6 text-center">
+        <div class="max-w-3xl mx-auto">
+            <h2 class="font-display text-4xl font-bold mb-6">Ready to upgrade your AI's brain?</h2>
+            <p class="text-gray-400 mb-10 text-lg">
+                Deploy locally in seconds. Works with Claude, GPT-4, and any local LLM via REST API.
+            </p>
+            
+            <div class="bg-gray-900 rounded-2xl p-8 border border-white/10 text-left mb-10">
+                <h3 class="font-mono text-sm text-indigo-400 mb-4 font-bold">1. Docker Installation</h3>
+                <div class="flex items-center justify-between p-4 bg-black rounded-lg border border-white/5 font-mono text-sm mb-6">
+                    <code class="text-gray-300">git clone https://github.com/sachitrafa/cognitive-ai-memory.git && cd cognitive-ai-memory && docker compose up -d</code>
+                    <button onclick="copyToClipboard('git clone https://github.com/sachitrafa/cognitive-ai-memory.git')" class="p-2 hover:bg-white/10 rounded">
+                        <i data-lucide="copy" class="w-4 h-4 text-gray-400"></i>
+                    </button>
+                </div>
+
+                <h3 class="font-mono text-sm text-indigo-400 mb-4 font-bold">2. Add to Claude (MCP)</h3>
+                <div class="bg-black p-4 rounded-lg border border-white/5 text-xs font-mono text-gray-500">
+                    { <br/>
+                    &nbsp;&nbsp;"mcpServers": { <br/>
+                    &nbsp;&nbsp;&nbsp;&nbsp;"cognitive-memory": { <br/>
+                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"command": "yourmemory" <br/>
+                    &nbsp;&nbsp;&nbsp;&nbsp;} <br/>
+                    &nbsp;&nbsp;} <br/>
+                    }
+                </div>
+            </div>
+
+            <a href="https://github.com/sachitrafa/cognitive-ai-memory" target="_blank" class="inline-flex items-center gap-2 px-10 py-5 bg-white text-black rounded-full font-bold text-xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-white/5">
+                <i data-lucide="star" class="w-6 h-6 fill-black"></i> Star the Repo
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-12 border-t border-white/5 px-6">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-2 opacity-50">
+                <i data-lucide="brain-circuit" class="w-5 h-5"></i>
+                <span class="font-display font-bold">Cognitive AI Memory</span>
+            </div>
+            <p class="text-gray-600 text-sm">
+                Built by <a href="https://github.com/sachitrafa" class="underline hover:text-white transition-colors">sachitrafa</a>. Open source under MIT.
+            </p>
+            <div class="flex gap-6 text-gray-500">
+                <a href="https://github.com/sachitrafa/cognitive-ai-memory" class="hover:text-white"><i data-lucide="github" class="w-5 h-5"></i></a>
+                <a href="#" class="hover:text-white"><i data-lucide="twitter" class="w-5 h-5"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 px-6 py-3 bg-indigo-600 rounded-full font-bold text-sm shadow-2xl transition-all translate-y-20 opacity-0 pointer-events-none">
+        Copied to clipboard!
+    </div>
+
+    <script>
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        function copyToClipboard(text) {
+            const el = document.createElement('textarea');
+            el.value = text;
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+            
+            // Show toast
+            const toast = document.getElementById('toast');
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+                toast.classList.remove('translate-y-0', 'opacity-100');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
