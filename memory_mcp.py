@@ -316,15 +316,42 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
         if "importance" not in arguments:
             return [types.TextContent(type="text", text=json.dumps(
                 {"error": "importance is required (0.0–1.0). Re-evaluate after the update."}))]
-        importance  = float(arguments["importance"])
-        importance  = max(0.0, min(1.0, importance))
+        importance = max(0.0, min(1.0, float(arguments["importance"])))
 
-        category      = categorize(new_content)
-        embedding     = embed(new_content)
-        embedding_str = f"[{','.join(str(x) for x in embedding)}]"
+        category  = categorize(new_content)
+        embedding = embed(new_content)
 
         conn = _get_conn()
         cur  = conn.cursor()
+
+        # Fetch the memory's owner so resolve() can scope the dedup query
+        cur.execute("SELECT user_id FROM memories WHERE id = %s", (memory_id,))
+        owner = cur.fetchone()
+        if owner is None:
+            cur.close()
+            conn.close()
+            return [types.TextContent(type="text", text=json.dumps(
+                {"error": f"Memory {memory_id} not found."}))]
+        user_id_owner = owner[0]
+
+        # Check if new content clashes with a *different* row
+        resolution = _services["resolve"](user_id_owner, new_content, embedding, conn)
+        if resolution["action"] != "new" and resolution["existing"]["id"] != memory_id:
+            # New content is a duplicate of another row — reinforce that row instead
+            existing = resolution["existing"]
+            cur.execute("""
+                UPDATE memories SET recall_count = recall_count + 1, last_accessed_at = NOW()
+                WHERE id = %s RETURNING id, content, category, importance
+            """, (existing["id"],))
+            row = cur.fetchone()
+            conn.commit()
+            cur.close()
+            conn.close()
+            return [types.TextContent(type="text", text=json.dumps(
+                {"updated": 1, "id": row[0], "content": row[1], "category": row[2],
+                 "importance": row[3], "action": "reinforce_existing"}))]
+
+        embedding_str = f"[{','.join(str(x) for x in embedding)}]"
         cur.execute("""
             UPDATE memories
             SET content          = %s,

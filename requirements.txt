@@ -6,3 +6,6 @@ python-dotenv
 httpx
 apscheduler
 spacy
+sentence-transformers
+python-dateutil
+mcp
