@@ -59,7 +59,11 @@ pip install yourmemory
 
 All dependencies are installed automatically. No clone, no separate download steps needed.
 
-### 2. Wire into Claude
+### 2. Wire into your AI client
+
+The database is created automatically at `~/.yourmemory/memories.db` on first use. No `.env` file needed.
+
+#### Claude Code
 
 Add to `~/.claude/settings.json`:
 
@@ -75,7 +79,44 @@ Add to `~/.claude/settings.json`:
 
 Reload Claude Code (`Cmd+Shift+P` → `Developer: Reload Window`).
 
-The database is created automatically at `~/.yourmemory/memories.db` on first use. No `.env` file needed.
+#### Cline (VS Code)
+
+1. Open VS Code → Cline extension → click **MCP Servers** icon
+2. Click **"Edit MCP Settings"**
+3. Add:
+
+```json
+{
+  "mcpServers": {
+    "yourmemory": {
+      "command": "yourmemory",
+      "args": []
+    }
+  }
+}
+```
+
+4. Save — Cline will detect the server automatically.
+
+#### Claude Desktop
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows):
+
+```json
+{
+  "mcpServers": {
+    "yourmemory": {
+      "command": "yourmemory"
+    }
+  }
+}
+```
+
+Restart Claude Desktop.
+
+#### Any MCP-compatible client
+
+YourMemory is a standard stdio MCP server. The command is simply `yourmemory`. Add it to any client that supports MCP servers using the same pattern above.
 
 ### 3. Add memory instructions to your project
 
