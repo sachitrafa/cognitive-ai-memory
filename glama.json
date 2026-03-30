@@ -2,6 +2,7 @@
   "$schema": "https://glama.ai/mcp/glama.schema.json",
   "name": "YourMemory",
   "description": "Persistent memory for Claude using the Ebbinghaus forgetting curve. Memories decay over time by category, stale facts are pruned automatically, and semantic deduplication prevents noise. +16pp better recall than Mem0 on LoCoMo.",
+  "license": "Apache-2.0",
   "homepage": "https://github.com/sachitrafa/cognitive-ai-memory",
   "repository": {
     "type": "git",

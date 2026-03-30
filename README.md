@@ -235,12 +235,8 @@ Benchmarks use the [LoCoMo](https://github.com/snap-research/locomo) dataset by 
 
 ## License
 
-Copyright (c) 2026 **Sachit Misra**. All rights reserved.
+Copyright 2026 **Sachit Misra**
 
-All source code, algorithms, scoring formulas, data structures, and associated documentation in this repository are the exclusive intellectual property of Sachit Misra.
-
-**Non-commercial use only.** Personal, educational, and research use is permitted with attribution. Commercial use — including incorporation into products, SaaS offerings, or revenue-generating services — requires prior written consent.
-
-For commercial licensing: mishrasachit1@gmail.com
-
-See [LICENSE](LICENSE) for full terms.
+Licensed under the [Apache License, Version 2.0](LICENSE).
+You may use, modify, and distribute this software freely with attribution.
+Patent protection included — contributors cannot sue users over patent claims.
