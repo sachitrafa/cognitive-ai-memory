@@ -1,579 +1,285 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YourMemory | Persistent memory for AI agents</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background-color: #ffffff;
-            color: #111111;
-        }
-        h1, h2, h3 { font-family: 'Lora', serif; }
-        .font-mono { font-family: 'JetBrains Mono', monospace; }
-
-        .subtle-grid {
-            background-image: radial-gradient(circle at 1px 1px, rgba(0,0,0,0.04) 1px, transparent 0);
-            background-size: 32px 32px;
-        }
-        .subtle-glow {
-            background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(37,99,235,0.05) 0%, transparent 70%);
-        }
-        .card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        }
-        .card:hover {
-            border-color: #bfdbfe;
-            box-shadow: 0 2px 8px rgba(37,99,235,0.08);
-            transition: all 0.2s ease;
-        }
-        .pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 12px;
-            border-radius: 999px;
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            color: #1d4ed8;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-        }
-        .btn-primary {
-            background: #2563eb;
-            color: white;
-            padding: 12px 28px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 15px;
-            transition: background 0.15s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .btn-primary:hover { background: #1d4ed8; }
-
-        .btn-ghost {
-            color: #475569;
-            padding: 12px 28px;
-            border-radius: 8px;
-            font-weight: 500;
-            font-size: 15px;
-            border: 1px solid #e2e8f0;
-            transition: all 0.15s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .btn-ghost:hover { background: #f0f7ff; color: #111111; }
-
-        .benchmark-table th {
-            background: #f8faff;
-            color: #475569;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-            padding: 10px 16px;
-            text-align: left;
-            border-bottom: 1px solid #e8e8f0;
-        }
-        .benchmark-table td {
-            padding: 12px 16px;
-            font-size: 13px;
-            border-bottom: 1px solid #f1f1f7;
-            color: #374151;
-        }
-        .benchmark-table tr:last-child td { border-bottom: none; }
-        .benchmark-table tr:hover td { background: #fafafe; }
-        .winner { color: #2563eb; font-weight: 600; }
-        .loser { color: #94a3b8; }
-
-        .formula-box {
-            background: #f0f7ff;
-            border: 1px solid #bfdbfe;
-            border-radius: 8px;
-            padding: 20px 24px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 13px;
-            color: #1e40af;
-            line-height: 1.8;
-        }
-
-        .tag-green {
-            background: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            color: #16a34a;
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-weight: 500;
-        }
-        .tag-red {
-            background: #fff1f2;
-            border: 1px solid #fecdd3;
-            color: #dc2626;
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-weight: 500;
-        }
-
-        code {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 12px;
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            padding: 2px 6px;
-            border-radius: 4px;
-            color: #1d4ed8;
-        }
-
-        .section-label {
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            color: #2563eb;
-            margin-bottom: 12px;
-        }
-
-        nav { background: rgba(255,255,255,0.92); border-bottom: 1px solid #e8e8f0; }
-        footer { border-top: 1px solid #e8e8f0; }
-        section { border-top: 1px solid #f0f0f5; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YourMemory | Persistent memory for AI agents</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700;9..40,800;9..40,900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'DM Sans', sans-serif; }
+    .font-mono, code, pre { font-family: 'JetBrains Mono', monospace; }
+    .dot-bg {
+      background-color: #F9FAFB;
+      background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+      background-size: 40px 40px;
+    }
+    ::selection { background: #cffafe; }
+  </style>
 </head>
-<body class="subtle-grid bg-white">
+<body class="min-h-screen text-[#0A192F] dot-bg">
 
-    <!-- Navigation -->
-    <nav class="fixed w-full z-50 backdrop-blur-md">
-        <div class="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-                <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-                    <svg class="w-5 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 32 16" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M1 8 C5 2, 11 2, 16 8 S27 14, 31 8"/>
-                    </svg>
-                </div>
-                <span class="font-semibold text-sm text-slate-900">YourMemory</span>
-            </div>
-            <div class="hidden md:flex items-center gap-6 text-sm text-slate-600">
-                <a href="#features" class="hover:text-slate-900 transition-colors">Features</a>
-                <a href="#benchmarks" class="hover:text-slate-900 transition-colors">Benchmarks</a>
-                <a href="#setup" class="hover:text-slate-900 transition-colors">Setup</a>
-            </div>
-            <a href="https://github.com/sachitrafa/cognitive-ai-memory" target="_blank" class="btn-ghost text-sm py-2 px-4">
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-                GitHub
-            </a>
-        </div>
-    </nav>
-
-    <!-- Hero -->
-    <header class="relative pt-28 pb-20 px-6">
-        <div class="subtle-glow absolute inset-0 pointer-events-none"></div>
-        <div class="max-w-3xl mx-auto text-center">
-            <div class="pill mb-6">
-                <span class="w-1.5 h-1.5 rounded-full bg-blue-500 inline-block"></span>
-                Open Source · MCP Compatible
-            </div>
-
-            <h1 class="text-4xl md:text-5xl font-bold leading-tight mb-5 tracking-tight text-slate-900">
-                Persistent memory for AI agents<br/>
-                <span class="text-blue-700 italic">modelled on how humans forget.</span>
-            </h1>
-
-            <p class="text-base text-slate-600 max-w-xl mx-auto mb-8 leading-relaxed">
-                YourMemory uses the Ebbinghaus forgetting curve to score, decay, and reinforce memories over time — so your AI always surfaces what matters most, not just what was stored last.
-            </p>
-
-            <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
-                <a href="#setup" class="btn-primary">
-                    Get started
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                </a>
-                <div class="font-mono text-sm text-slate-600 flex items-center gap-2 px-4 py-3 card">
-                    <span class="text-blue-600">$</span> pip install yourmemory
-                    <button onclick="copyCmd('pip install yourmemory')" class="ml-2 text-slate-600 hover:text-slate-700 transition-colors">
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Terminal preview -->
-            <div class="mt-14 mx-auto max-w-2xl card overflow-hidden text-left">
-                <div class="flex items-center gap-1.5 px-4 py-2.5 border-b border-slate-100 bg-slate-50">
-                    <div class="w-2.5 h-2.5 rounded-full bg-slate-200"></div>
-                    <div class="w-2.5 h-2.5 rounded-full bg-slate-200"></div>
-                    <div class="w-2.5 h-2.5 rounded-full bg-slate-200"></div>
-                    <span class="ml-3 text-xs text-slate-600 font-mono">memory-server</span>
-                </div>
-                <div class="p-5 font-mono text-sm space-y-3">
-                    <div class="text-slate-600 text-xs"># storing a new memory</div>
-                    <div class="text-blue-600">store_memory("Sachit is switching from React to Vue.js")</div>
-                    <div class="text-slate-600 text-xs mt-3"># 45 days later — query fires</div>
-                    <div class="text-slate-700">recall_memory("what frontend framework does Sachit use?")</div>
-                    <div class="mt-2 space-y-1.5">
-                        <div class="flex items-center gap-3 p-2.5 rounded bg-green-50 border border-green-100">
-                            <span class="tag-green">score 0.87</span>
-                            <span class="text-slate-700 text-xs">Sachit is switching from React to Vue.js</span>
-                        </div>
-                        <div class="flex items-center gap-3 p-2.5 rounded bg-slate-50 border border-slate-100">
-                            <span class="tag-red">score 0.04</span>
-                            <span class="text-slate-600 text-xs line-through">Sachit uses React for frontend</span>
-                        </div>
-                    </div>
-                    <div class="text-slate-600 text-xs pt-1">decay pruned 1 stale memory · 2 results returned</div>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Features -->
-    <section id="features" class="py-20 px-6 border-t border-slate-100">
-        <div class="max-w-5xl mx-auto">
-            <div class="text-center mb-12">
-                <div class="section-label">How it works</div>
-                <h2 class="text-2xl font-bold mb-3 text-slate-900">Memory that ages gracefully</h2>
-                <p class="text-slate-600 text-sm max-w-lg mx-auto">Not a vector database. Not a chat log. A cognitive memory layer that knows what to keep and what to let go.</p>
-            </div>
-
-            <div class="grid md:grid-cols-3 gap-5">
-                <div class="card p-6">
-                    <div class="w-8 h-8 rounded-lg bg-blue-600/15 flex items-center justify-center mb-4">
-                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6"/></svg>
-                    </div>
-                    <h3 class="font-semibold mb-2 text-sm">Ebbinghaus Decay</h3>
-                    <p class="text-slate-600 text-sm leading-relaxed">Memories fade over time using the forgetting curve. Recalled memories get reinforced. Unused ones quietly expire.</p>
-                </div>
-                <div class="card p-6">
-                    <div class="w-8 h-8 rounded-lg bg-blue-600/15 flex items-center justify-center mb-4">
-                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                    </div>
-                    <h3 class="font-semibold mb-2 text-sm">Fully Local</h3>
-                    <p class="text-slate-600 text-sm leading-relaxed">SQLite by default — no Docker, no database setup. Upgrade to PostgreSQL + pgvector any time. Your data never leaves your machine.</p>
-                </div>
-                <div class="card p-6">
-                    <div class="w-8 h-8 rounded-lg bg-blue-600/15 flex items-center justify-center mb-4">
-                        <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-                    </div>
-                    <h3 class="font-semibold mb-2 text-sm">MCP Native</h3>
-                    <p class="text-slate-600 text-sm leading-relaxed">Works out of the box with Claude Code and any MCP-compatible agent. Three tools: <code>store</code>, <code>recall</code>, <code>update</code>.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Benchmarks -->
-    <section id="benchmarks" class="py-20 px-6 border-t border-slate-100">
-        <div class="max-w-5xl mx-auto">
-            <div class="text-center mb-12">
-                <div class="section-label">Benchmarks</div>
-                <h2 class="text-2xl font-bold mb-3 text-slate-900">Evaluated on LoCoMo</h2>
-                <p class="text-slate-600 text-sm max-w-xl mx-auto">
-                    LoCoMo is a public benchmark by Snap Research — 10 real multi-session conversations spanning weeks to months, 272 sessions, 1,534 QA pairs. Metric: <strong class="text-slate-700">Recall@5</strong> — does the correct answer appear in the top 5 retrieved results?
-                </p>
-            </div>
-
-            <!-- Summary stats -->
-            <div class="grid md:grid-cols-3 gap-4 mb-8">
-                <div class="card p-5 text-center">
-                    <div class="text-3xl font-bold text-blue-600 mb-1">34%</div>
-                    <div class="text-xs text-slate-600">Cognitive AI — Recall@5</div>
-                </div>
-                <div class="card p-5 text-center">
-                    <div class="text-3xl font-bold text-slate-600 mb-1">22%</div>
-                    <div class="text-xs text-slate-600">Zep Cloud — Recall@5</div>
-                </div>
-                <div class="card p-5 text-center">
-                    <div class="text-3xl font-bold text-slate-600 mb-1">18%</div>
-                    <div class="text-xs text-slate-600">Mem0 — Recall@5</div>
-                </div>
-            </div>
-
-            <!-- Metric tradeoff table -->
-            <div class="card overflow-hidden mb-6">
-                <div class="px-5 py-4 border-b border-slate-100">
-                    <span class="text-xs font-semibold text-slate-600 uppercase tracking-wider">10 conversations · 1,534 QA pairs · Recall@5</span>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="benchmark-table w-full">
-                        <thead>
-                            <tr>
-                                <th>Metric</th>
-                                <th>Cognitive AI</th>
-                                <th>Zep Cloud</th>
-                                <th>Mem0</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="text-slate-600">Recall@5 (LoCoMo)</td>
-                                <td class="winner">34%</td>
-                                <td class="loser">22%</td>
-                                <td class="loser">18%</td>
-                            </tr>
-                            <tr>
-                                <td class="text-slate-600">Samples won</td>
-                                <td class="winner">9 / 10</td>
-                                <td class="loser">—</td>
-                                <td class="loser">—</td>
-                            </tr>
-                            <tr>
-                                <td class="text-slate-600">LLM calls at retrieval</td>
-                                <td class="winner">None</td>
-                                <td class="loser">GPT-4</td>
-                                <td class="loser">Yes</td>
-                            </tr>
-                            <tr>
-                                <td class="text-slate-600">LLM calls at ingestion</td>
-                                <td class="winner">None</td>
-                                <td class="loser">GPT-4</td>
-                                <td class="loser">Yes</td>
-                            </tr>
-                            <tr>
-                                <td class="text-slate-600">Storage architecture</td>
-                                <td class="winner">SQLite (default) · PostgreSQL opt-in</td>
-                                <td class="loser">pgvector + knowledge graph</td>
-                                <td class="loser">Managed cloud</td>
-                            </tr>
-                            <tr>
-                                <td class="text-slate-600">Data privacy</td>
-                                <td class="winner">Fully local</td>
-                                <td class="loser">Sent to OpenAI</td>
-                                <td class="loser">Sent to Mem0 cloud</td>
-                            </tr>
-                            <tr>
-                                <td class="text-slate-600">Ingestion latency</td>
-                                <td class="winner">Instant</td>
-                                <td class="loser">20–25s (async LLM)</td>
-                                <td class="loser">Varies</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <p class="text-xs text-slate-600 text-center">
-                Full methodology and per-sample results at <a href="https://github.com/sachitrafa/cognitive-ai-memory/blob/main/BENCHMARKS.md" class="text-blue-600 hover:underline" target="_blank">BENCHMARKS.md</a>. Dataset: <a href="https://github.com/snap-research/locomo" class="text-blue-600 hover:underline" target="_blank">LoCoMo by Snap Research</a>.
-            </p>
-        </div>
-    </section>
-
-    <!-- How it works / Formula -->
-    <section id="how-it-works" class="py-20 px-6 border-t border-slate-100">
-        <div class="max-w-5xl mx-auto">
-            <div class="grid md:grid-cols-2 gap-12 items-center">
-                <div>
-                    <div class="section-label">Scoring formula</div>
-                    <h2 class="text-2xl font-bold mb-4 text-slate-900">Relevance × recency</h2>
-                    <p class="text-slate-600 text-sm leading-relaxed mb-6">
-                        Every retrieval combines semantic similarity with a biological memory model. Memories that haven't been accessed in a long time receive a lower strength score — and are pruned entirely once they fall below the threshold.
-                    </p>
-                    <ul class="space-y-2 text-sm text-slate-600">
-                        <li class="flex gap-2"><span class="text-blue-600 mt-0.5">→</span> <span><strong class="text-slate-700">importance</strong> — set at store time (0–1)</span></li>
-                        <li class="flex gap-2"><span class="text-blue-600 mt-0.5">→</span> <span><strong class="text-slate-700">λ_eff</strong> — decay rate, modulated by importance</span></li>
-                        <li class="flex gap-2"><span class="text-blue-600 mt-0.5">→</span> <span><strong class="text-slate-700">recall_count</strong> — reinforced on every access</span></li>
-                        <li class="flex gap-2"><span class="text-blue-600 mt-0.5">→</span> <span>memories below strength <code>0.05</code> are pruned</span></li>
-                    </ul>
-                </div>
-                <div class="formula-box">
-                    <div class="text-slate-600 text-xs mb-3"># retrieval score</div>
-                    score = cosine_sim × strength<br/><br/>
-                    <div class="text-slate-600 text-xs mb-3"># ebbinghaus strength</div>
-                    strength = importance<br/>
-                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;× exp(−λ_eff × days)<br/>
-                    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;× (1 + recall_count × 0.2)<br/><br/>
-                    <div class="text-slate-600 text-xs mb-3"># adaptive decay rate</div>
-                    λ_eff = 0.16 × (1 − importance × 0.8)
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Setup -->
-    <section id="setup" class="py-20 px-6 border-t border-slate-100">
-        <div class="max-w-2xl mx-auto">
-            <div class="text-center mb-10">
-                <div class="section-label">Setup</div>
-                <h2 class="text-2xl font-bold mb-3 text-slate-900">Up and running in two steps</h2>
-                <p class="text-slate-600 text-sm">No Docker. No database setup. SQLite works out of the box.</p>
-            </div>
-
-            <!-- Tab switcher -->
-            <div class="flex gap-1 p-1 bg-slate-100 rounded-lg mb-6" role="tablist">
-                <button onclick="switchTab('sqlite')" id="tab-sqlite"
-                    class="flex-1 text-xs font-semibold py-2 px-3 rounded-md transition-all bg-white text-blue-600 shadow-sm">
-                    SQLite <span class="text-slate-400 font-normal">(default)</span>
-                </button>
-                <button onclick="switchTab('postgres')" id="tab-postgres"
-                    class="flex-1 text-xs font-semibold py-2 px-3 rounded-md transition-all text-slate-600 hover:text-slate-800">
-                    PostgreSQL <span class="text-slate-400 font-normal">(optional)</span>
-                </button>
-            </div>
-
-            <!-- SQLite tab -->
-            <div id="panel-sqlite" class="space-y-4">
-                <div class="card p-5">
-                    <div class="text-xs font-semibold text-blue-600 mb-3 font-mono">1. Install</div>
-                    <div class="flex items-center justify-between bg-slate-50 rounded p-3 font-mono text-xs text-slate-700 border border-slate-200">
-                        <span>pip install yourmemory</span>
-                        <button onclick="copyCmd('pip install yourmemory')" class="ml-3 text-slate-400 hover:text-slate-600 flex-shrink-0">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                        </button>
-                    </div>
-                    <p class="text-xs text-slate-500 mt-2">All dependencies installed automatically. Database created at <code>~/.yourmemory/memories.db</code> on first run.</p>
-                </div>
-
-                <div class="card p-5">
-                    <div class="text-xs font-semibold text-blue-600 mb-3 font-mono">2. Wire into Claude (~/.claude/settings.json)</div>
-                    <div class="bg-slate-50 rounded p-3 font-mono text-xs text-slate-600 border border-slate-200 leading-relaxed">
-                        {<br/>
-                        &nbsp;&nbsp;"mcpServers": {<br/>
-                        &nbsp;&nbsp;&nbsp;&nbsp;"yourmemory": {<br/>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"command": "yourmemory"<br/>
-                        &nbsp;&nbsp;&nbsp;&nbsp;}<br/>
-                        &nbsp;&nbsp;}<br/>
-                        }
-                    </div>
-                    <p class="text-xs text-slate-500 mt-2">Then reload Claude Code: <code>Cmd+Shift+P</code> → <code>Developer: Reload Window</code></p>
-                </div>
-
-                <div class="card p-5">
-                    <div class="text-xs font-semibold text-blue-600 mb-3 font-mono">3. Add memory instructions to your project</div>
-                    <p class="text-xs text-slate-600 leading-relaxed">Copy <code>sample_CLAUDE.md</code> from the repo into your project root as <code>CLAUDE.md</code>. Replace <code>YOUR_NAME</code> and <code>YOUR_USER_ID</code>. Claude will now recall, store, and update memories automatically on every task.</p>
-                </div>
-            </div>
-
-            <!-- PostgreSQL tab -->
-            <div id="panel-postgres" class="space-y-4 hidden">
-                <div class="card p-5">
-                    <div class="text-xs font-semibold text-blue-600 mb-3 font-mono">1. Install PostgreSQL + pgvector</div>
-                    <div class="space-y-2">
-                        <p class="text-xs text-slate-500 font-semibold mb-1">macOS</p>
-                        <div class="flex items-center justify-between bg-slate-50 rounded p-3 font-mono text-xs text-slate-700 border border-slate-200">
-                            <span>brew install postgresql@16 pgvector &amp;&amp; brew services start postgresql@16</span>
-                            <button onclick="copyCmd('brew install postgresql@16 pgvector && brew services start postgresql@16')" class="ml-3 text-slate-400 hover:text-slate-600 flex-shrink-0">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                            </button>
-                        </div>
-                        <p class="text-xs text-slate-500 font-semibold mt-3 mb-1">Ubuntu / Debian</p>
-                        <div class="flex items-center justify-between bg-slate-50 rounded p-3 font-mono text-xs text-slate-700 border border-slate-200">
-                            <span>sudo apt install postgresql postgresql-contrib postgresql-16-pgvector</span>
-                            <button onclick="copyCmd('sudo apt install postgresql postgresql-contrib postgresql-16-pgvector')" class="ml-3 text-slate-400 hover:text-slate-600 flex-shrink-0">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card p-5">
-                    <div class="text-xs font-semibold text-blue-600 mb-3 font-mono">2. Create the database</div>
-                    <div class="flex items-center justify-between bg-slate-50 rounded p-3 font-mono text-xs text-slate-700 border border-slate-200">
-                        <span>createdb yourmemory</span>
-                        <button onclick="copyCmd('createdb yourmemory')" class="ml-3 text-slate-400 hover:text-slate-600 flex-shrink-0">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                        </button>
-                    </div>
-                </div>
-
-                <div class="card p-5">
-                    <div class="text-xs font-semibold text-blue-600 mb-3 font-mono">3. Set DATABASE_URL in .env</div>
-                    <div class="flex items-center justify-between bg-slate-50 rounded p-3 font-mono text-xs text-slate-700 border border-slate-200">
-                        <span>DATABASE_URL=postgresql://YOUR_USER@localhost:5432/yourmemory</span>
-                        <button onclick="copyCmd('DATABASE_URL=postgresql://YOUR_USER@localhost:5432/yourmemory')" class="ml-3 text-slate-400 hover:text-slate-600 flex-shrink-0">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                        </button>
-                    </div>
-                    <p class="text-xs text-slate-500 mt-2">Replace <code>YOUR_USER</code> with your system username (<code>whoami</code>). The backend switches automatically.</p>
-                </div>
-
-                <div class="card p-5">
-                    <div class="text-xs font-semibold text-blue-600 mb-3 font-mono">4. Install &amp; wire into Claude</div>
-                    <div class="flex items-center justify-between bg-slate-50 rounded p-3 font-mono text-xs text-slate-700 border border-slate-200 mb-3">
-                        <span>pip install yourmemory</span>
-                        <button onclick="copyCmd('pip install yourmemory')" class="ml-3 text-slate-400 hover:text-slate-600 flex-shrink-0">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
-                        </button>
-                    </div>
-                    <div class="bg-slate-50 rounded p-3 font-mono text-xs text-slate-600 border border-slate-200 leading-relaxed">
-                        {<br/>
-                        &nbsp;&nbsp;"mcpServers": {<br/>
-                        &nbsp;&nbsp;&nbsp;&nbsp;"yourmemory": {<br/>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"command": "yourmemory"<br/>
-                        &nbsp;&nbsp;&nbsp;&nbsp;}<br/>
-                        &nbsp;&nbsp;}<br/>
-                        }
-                    </div>
-                </div>
-            </div>
-
-            <div class="text-center mt-8">
-                <a href="https://github.com/sachitrafa/cognitive-ai-memory" target="_blank" class="btn-primary">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-                    View on GitHub
-                </a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="py-10 border-t border-slate-100 px-6">
-        <div class="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-600">
-            <span class="font-semibold text-slate-600">YourMemory</span>
-            <p>Built by <a href="https://github.com/sachitrafa" class="hover:text-slate-900 transition-colors">sachitrafa</a> · Open source under MIT</p>
-            <a href="https://github.com/sachitrafa/cognitive-ai-memory" class="hover:text-slate-900 transition-colors">
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-            </a>
-        </div>
-    </footer>
-
-    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium shadow-xl transition-all duration-200 translate-y-12 opacity-0 pointer-events-none">
-        Copied
+  <!-- NAVIGATION -->
+  <nav class="sticky top-0 z-50 backdrop-blur-md border-b border-gray-200" style="background:rgba(249,250,251,0.85)">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <svg width="28" height="28" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="10" y="80" width="80" height="10" rx="2" fill="#0A192F"/>
+          <rect x="25" y="60" width="50" height="10" rx="2" fill="#0A192F"/>
+          <rect x="40" y="40" width="15" height="10" rx="2" fill="#0A192F"/>
+          <rect x="60" y="40" width="5"  height="10" rx="1" fill="#00D4FF"/>
+          <rect x="47.5" y="20" width="5" height="10" rx="1" fill="#00D4FF" fill-opacity="0.6"/>
+        </svg>
+        <span class="font-bold tracking-tighter text-lg">YourMemory</span>
+      </div>
+      <div class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-500">
+        <a href="#logic"      class="hover:text-[#0A192F] transition-colors">Logic</a>
+        <a href="#benchmarks" class="hover:text-[#0A192F] transition-colors">Benchmarks</a>
+        <a href="https://github.com/sachitrafa/cognitive-ai-memory" target="_blank"
+           class="flex items-center gap-1.5 hover:text-[#0A192F] transition-colors">
+          <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57
+                     0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695
+                     -.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99
+                     .105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225
+                     -.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405
+                     c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225
+                     0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3
+                     0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          GitHub
+        </a>
+      </div>
     </div>
+  </nav>
 
-    <script>
-        function switchTab(tab) {
-            const tabs = ['sqlite', 'postgres'];
-            tabs.forEach(t => {
-                const btn = document.getElementById('tab-' + t);
-                const panel = document.getElementById('panel-' + t);
-                if (t === tab) {
-                    btn.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
-                    btn.classList.remove('text-slate-600');
-                    panel.classList.remove('hidden');
-                } else {
-                    btn.classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
-                    btn.classList.add('text-slate-600');
-                    panel.classList.add('hidden');
-                }
-            });
-        }
+  <!-- HERO -->
+  <header class="max-w-6xl mx-auto px-6 pt-24 pb-32">
+    <div class="grid lg:grid-cols-2 gap-16 items-center">
+      <div>
+        <div class="inline-flex items-center gap-2 bg-cyan-50 border border-cyan-100 text-cyan-700 px-3 py-1 rounded-full text-xs font-bold mb-6 uppercase tracking-wide">
+          <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
+            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+          </svg>
+          MCP Compatible
+        </div>
+        <h1 class="text-6xl md:text-7xl font-bold tracking-tighter leading-[0.9] mb-8">
+          Memory that <br/><span class="text-[#00D4FF]">ages gracefully.</span>
+        </h1>
+        <p class="text-xl text-gray-600 mb-10 max-w-lg leading-relaxed">
+          Biologically-inspired persistent memory for AI agents.
+          Automatically prunes stale data and reinforces useful context using the Ebbinghaus forgetting curve.
+        </p>
 
-        function copyCmd(text) {
-            navigator.clipboard.writeText(text).catch(() => {
-                const el = document.createElement('textarea');
-                el.value = text;
-                document.body.appendChild(el);
-                el.select();
-                document.execCommand('copy');
-                document.body.removeChild(el);
-            });
-            const toast = document.getElementById('toast');
-            toast.classList.remove('translate-y-12', 'opacity-0');
-            toast.classList.add('translate-y-0', 'opacity-100');
-            setTimeout(() => {
-                toast.classList.add('translate-y-12', 'opacity-0');
-                toast.classList.remove('translate-y-0', 'opacity-100');
-            }, 1800);
-        }
-    </script>
+        <div class="flex items-center bg-white border-2 border-[#0A192F] rounded-xl overflow-hidden p-1 w-fit shadow-[4px_4px_0px_0px_rgba(10,25,47,1)]">
+          <code class="px-4 font-mono text-sm font-bold text-[#0A192F]">pip install yourmemory</code>
+          <button id="copyBtn" onclick="copyCmd()" class="bg-[#0A192F] text-white py-2 px-4 rounded-lg hover:bg-black transition-colors text-sm font-medium">
+            Copy
+          </button>
+        </div>
+      </div>
+
+      <!-- TERMINAL VISUALIZER -->
+      <div class="relative">
+        <div class="absolute -inset-4 bg-gradient-to-tr from-cyan-100 to-purple-100 rounded-3xl blur-2xl opacity-50 pointer-events-none"></div>
+        <div class="relative bg-[#0A192F] rounded-2xl border border-gray-800 shadow-2xl overflow-hidden font-mono text-sm text-gray-400">
+          <div class="bg-gray-900 px-4 py-2.5 border-b border-gray-800 flex items-center gap-2">
+            <div class="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
+            <div class="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+            <span class="ml-2 text-[10px] uppercase tracking-widest text-gray-500">cognitive-runtime</span>
+          </div>
+          <div class="p-6 space-y-3 leading-relaxed">
+            <p class="text-gray-500"># Querying memory: "Frontend Stack"</p>
+            <div class="flex justify-between items-center bg-cyan-950/30 border-l-2 border-cyan-400 px-3 py-2 rounded-r">
+              <span class="text-cyan-100">"Prefers Vue.js"</span>
+              <span class="text-cyan-400 font-bold ml-4">0.94 Strength</span>
+            </div>
+            <div class="flex justify-between items-center opacity-40 italic px-3 py-2">
+              <span>"Uses React"</span>
+              <span class="text-red-400 ml-4">0.04 (Decayed)</span>
+            </div>
+            <p class="text-green-500 pt-3 border-t border-gray-800">✓ Pruning complete — 1 stale fact removed.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- BENCHMARKS -->
+  <section id="benchmarks" class="bg-[#0A192F] text-white py-32">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="grid lg:grid-cols-2 gap-20 items-center">
+        <!-- Chart card -->
+        <div class="bg-white/5 border border-white/10 p-10 rounded-3xl">
+          <div class="mb-10">
+            <h2 class="text-3xl font-bold mb-2">LoCoMo Recall@5</h2>
+            <p class="text-gray-400 font-mono text-xs uppercase tracking-tighter">Snap Research Standard Benchmark · 200 QA pairs</p>
+          </div>
+          <div class="space-y-8">
+            <div>
+              <div class="flex justify-between mb-2 text-sm">
+                <span class="font-bold">YourMemory MCP</span>
+                <span class="text-[#00D4FF] font-mono font-bold">34%</span>
+              </div>
+              <div class="h-4 bg-white/10 rounded-full overflow-hidden">
+                <div class="h-full bg-[#00D4FF] rounded-full" style="width:34%;box-shadow:0 0 14px rgba(0,212,255,0.5)"></div>
+              </div>
+            </div>
+            <div class="opacity-50">
+              <div class="flex justify-between mb-2 text-sm">
+                <span class="font-medium">Zep Cloud</span>
+                <span class="font-mono">22%</span>
+              </div>
+              <div class="h-4 bg-white/10 rounded-full overflow-hidden">
+                <div class="h-full bg-white/40 rounded-full" style="width:22%"></div>
+              </div>
+            </div>
+            <div class="opacity-50">
+              <div class="flex justify-between mb-2 text-sm">
+                <span class="font-medium">Mem0</span>
+                <span class="font-mono">18%</span>
+              </div>
+              <div class="h-4 bg-white/10 rounded-full overflow-hidden">
+                <div class="h-full bg-white/40 rounded-full" style="width:18%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Callouts -->
+        <div>
+          <h2 class="text-5xl font-bold mb-8 tracking-tighter leading-none">
+            Data-proven<br/>superiority.
+          </h2>
+          <ul class="space-y-6">
+            <li class="flex gap-4">
+              <svg class="mt-1 shrink-0" width="20" height="20" fill="none" stroke="#00D4FF" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+              <div>
+                <h4 class="font-bold text-lg leading-tight mb-1">+16pp Recall</h4>
+                <p class="text-gray-400">Outperforms standard vector memory systems on long-context multi-session recall.</p>
+              </div>
+            </li>
+            <li class="flex gap-4">
+              <svg class="mt-1 shrink-0" width="20" height="20" fill="none" stroke="#00D4FF" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+              <div>
+                <h4 class="font-bold text-lg leading-tight mb-1">Zero LLM Costs</h4>
+                <p class="text-gray-400">Retrieval and pruning run fully locally with spaCy — not GPT-4.</p>
+              </div>
+            </li>
+            <li class="flex gap-4">
+              <svg class="mt-1 shrink-0" width="20" height="20" fill="none" stroke="#00D4FF" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+              <div>
+                <h4 class="font-bold text-lg leading-tight mb-1">100% Privacy</h4>
+                <p class="text-gray-400">Sensitive data lives in your SQLite file, never in a vendor's managed cloud.</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CORE FEATURES -->
+  <section id="logic" class="max-w-6xl mx-auto px-6 py-32">
+    <div class="grid md:grid-cols-3 gap-12">
+      <!-- Feature 1 -->
+      <div class="group">
+        <div class="w-12 h-12 bg-white border border-gray-200 rounded-xl flex items-center justify-center mb-6 shadow-sm group-hover:border-[#00D4FF] transition-colors duration-200">
+          <!-- Brain / decay icon -->
+          <svg width="22" height="22" fill="none" stroke="#0A192F" stroke-width="1.8" viewBox="0 0 24 24">
+            <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/>
+            <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/>
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold mb-3">Biologically Pruned</h3>
+        <p class="text-gray-500 leading-relaxed">Adaptive decay rates per category — strategy memories persist, environment noise fades in days.</p>
+      </div>
+      <!-- Feature 2 -->
+      <div class="group">
+        <div class="w-12 h-12 bg-white border border-gray-200 rounded-xl flex items-center justify-center mb-6 shadow-sm group-hover:border-[#00D4FF] transition-colors duration-200">
+          <svg width="22" height="22" fill="none" stroke="#0A192F" stroke-width="1.8" viewBox="0 0 24 24">
+            <polyline points="4 17 10 11 4 5"/>
+            <line x1="12" y1="19" x2="20" y2="19"/>
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold mb-3">Fully Local</h3>
+        <p class="text-gray-500 leading-relaxed">SQLite default, no Docker, no external API keys. <code class="text-xs bg-gray-100 px-1 py-0.5 rounded">pip install yourmemory</code> and you're done.</p>
+      </div>
+      <!-- Feature 3 -->
+      <div class="group">
+        <div class="w-12 h-12 bg-white border border-gray-200 rounded-xl flex items-center justify-center mb-6 shadow-sm group-hover:border-[#00D4FF] transition-colors duration-200">
+          <svg width="22" height="22" fill="none" stroke="#0A192F" stroke-width="1.8" viewBox="0 0 24 24">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <h3 class="text-xl font-bold mb-3">Enterprise Private</h3>
+        <p class="text-gray-500 leading-relaxed">Data never leaves your machine. Optional PostgreSQL + pgvector for teams needing shared memory.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SETUP -->
+  <section id="setup" class="border-t border-gray-200 bg-white py-24">
+    <div class="max-w-3xl mx-auto px-6">
+      <h2 class="text-4xl font-bold tracking-tighter mb-2">Two commands.</h2>
+      <p class="text-gray-500 mb-12">Zero infrastructure. SQLite is created automatically at <code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded">~/.yourmemory/memories.db</code> on first use.</p>
+
+      <div class="space-y-4">
+        <div class="bg-[#0A192F] text-gray-300 rounded-2xl overflow-hidden">
+          <div class="px-4 py-2 border-b border-gray-800 text-[10px] uppercase tracking-widest text-gray-500 font-mono">1. Install</div>
+          <pre class="p-5 font-mono text-sm"><span class="text-gray-500">$</span> pip install yourmemory</pre>
+        </div>
+        <div class="bg-[#0A192F] text-gray-300 rounded-2xl overflow-hidden">
+          <div class="px-4 py-2 border-b border-gray-800 text-[10px] uppercase tracking-widest text-gray-500 font-mono">2. Add to ~/.claude/settings.json</div>
+          <pre class="p-5 font-mono text-sm text-cyan-100">{
+  "mcpServers": {
+    "yourmemory": {
+      "command": "yourmemory"
+    }
+  }
+}</pre>
+        </div>
+      </div>
+
+      <div class="mt-10 pt-10 border-t border-gray-100">
+        <p class="text-sm font-semibold text-gray-400 uppercase tracking-widest mb-4">PostgreSQL (optional — teams / large datasets)</p>
+        <div class="bg-[#0A192F] text-gray-300 rounded-2xl overflow-hidden">
+          <div class="px-4 py-2 border-b border-gray-800 text-[10px] uppercase tracking-widest text-gray-500 font-mono">Create a .env file</div>
+          <pre class="p-5 font-mono text-sm">DATABASE_URL=postgresql://YOUR_USER@localhost:5432/yourmemory</pre>
+        </div>
+        <p class="text-xs text-gray-400 mt-3">Backend is selected automatically — <code class="text-xs bg-gray-100 px-1 py-0.5 rounded">postgresql://</code> in DATABASE_URL → Postgres + pgvector, anything else → SQLite.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="border-t border-gray-200 py-20 bg-white">
+    <div class="max-w-6xl mx-auto px-6 text-center">
+      <div class="flex justify-center mb-4">
+        <svg width="32" height="32" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="10" y="80" width="80" height="10" rx="2" fill="#0A192F"/>
+          <rect x="25" y="60" width="50" height="10" rx="2" fill="#0A192F"/>
+          <rect x="40" y="40" width="15" height="10" rx="2" fill="#0A192F"/>
+          <rect x="60" y="40" width="5"  height="10" rx="1" fill="#00D4FF"/>
+          <rect x="47.5" y="20" width="5" height="10" rx="1" fill="#00D4FF" fill-opacity="0.6"/>
+        </svg>
+      </div>
+      <p class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">YourMemory MCP</p>
+      <p class="text-gray-500 text-sm max-w-sm mx-auto">Infrastructure for the Agentic Era. Built locally.</p>
+      <div class="mt-8 pt-8 border-t border-gray-100 text-[10px] text-gray-300 uppercase tracking-widest">
+        © 2026 Sachit Misra
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    function copyCmd() {
+      navigator.clipboard.writeText('pip install yourmemory').catch(() => {});
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+    }
+  </script>
 </body>
 </html>
