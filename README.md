@@ -83,20 +83,25 @@ Reload Claude Code (`Cmd+Shift+P` → `Developer: Reload Window`).
 
 1. Open VS Code → Cline extension → click **MCP Servers** icon
 2. Click **"Edit MCP Settings"**
-3. Add:
+3. Find the full path to the installed command:
+```bash
+which yourmemory
+# e.g. /usr/local/bin/yourmemory or /Users/you/.local/bin/yourmemory
+```
+4. Add using the **full path** (Cline doesn't inherit shell PATH):
 
 ```json
 {
   "mcpServers": {
     "yourmemory": {
-      "command": "yourmemory",
+      "command": "/usr/local/bin/yourmemory",
       "args": []
     }
   }
 }
 ```
 
-4. Save — Cline will detect the server automatically.
+5. Save — Cline will detect the server automatically.
 
 #### Claude Desktop
 
