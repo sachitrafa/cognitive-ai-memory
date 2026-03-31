@@ -81,22 +81,25 @@ Reload Claude Code (`Cmd+Shift+P` → `Developer: Reload Window`).
 
 #### Cline (VS Code)
 
-1. Open VS Code → Cline extension → click **MCP Servers** icon
-2. Click **"Edit MCP Settings"**
-3. Add the following (uses `python3` directly — no PATH issues):
+Cline works best with SSE transport. Start the server first in a terminal:
+
+```bash
+yourmemory --sse --port 3000
+```
+
+Then in Cline → **MCP Servers** → **Edit MCP Settings**:
 
 ```json
 {
   "mcpServers": {
     "yourmemory": {
-      "command": "python3",
-      "args": ["-m", "memory_mcp"]
+      "url": "http://localhost:3000/sse"
     }
   }
 }
 ```
 
-5. Save — Cline will detect the server automatically.
+Save — Cline will connect automatically.
 
 #### Claude Desktop
 

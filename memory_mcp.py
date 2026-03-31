@@ -18,6 +18,30 @@ from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp import types
 
+# SSE transport (used when --sse flag or PORT env var is set)
+def _run_sse(port: int):
+    from mcp.server.sse import SseServerTransport
+    from starlette.applications import Starlette
+    from starlette.routing import Route, Mount
+    from starlette.requests import Request
+    import uvicorn
+
+    sse = SseServerTransport("/messages/")
+
+    async def handle_sse(request: Request):
+        async with sse.connect_sse(
+            request.scope, request.receive, request._send
+        ) as streams:
+            await server.run(streams[0], streams[1], server.create_initialization_options())
+
+    app = Starlette(routes=[
+        Route("/sse", endpoint=handle_sse),
+        Mount("/messages/", app=sse.handle_post_message),
+    ])
+
+    print(f"YourMemory MCP server running on http://0.0.0.0:{port}/sse", flush=True)
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="warning")
+
 # Add project root so src.services imports work
 sys.path.insert(0, os.path.dirname(__file__))
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
@@ -457,7 +481,22 @@ async def main():
 
 
 def run():
-    asyncio.run(main())
+    from src.db.migrate import migrate
+    migrate()
+    _start_decay_scheduler()
+
+    # SSE mode: --sse flag or PORT env var
+    use_sse = "--sse" in sys.argv
+    port    = int(os.getenv("PORT", 0))
+    if not port and "--port" in sys.argv:
+        idx = sys.argv.index("--port")
+        if idx + 1 < len(sys.argv):
+            port = int(sys.argv[idx + 1])
+
+    if use_sse or port:
+        _run_sse(port or 3000)
+    else:
+        asyncio.run(main())
 
 
 if __name__ == "__main__":
