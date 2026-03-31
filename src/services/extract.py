@@ -29,9 +29,7 @@ def categorize(text: str) -> str:
     """
     Use spaCy dependency parse to classify:
       fact       — declarative sentence with an explicit subject
-                   e.g. "Novak is world number 1", "I love Python", "My name is Sachit"
       assumption — imperative sentence with no subject (command/instruction)
-                   e.g. "Use python instead of JS", "Please convert this image"
     """
     doc = _nlp(text)
     has_subject = any(tok.dep_ in ("nsubj", "nsubjpass") for tok in doc)

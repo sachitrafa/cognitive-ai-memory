@@ -57,11 +57,16 @@
   <header class="max-w-6xl mx-auto px-6 pt-24 pb-32">
     <div class="grid lg:grid-cols-2 gap-16 items-center">
       <div>
-        <div class="inline-flex items-center gap-2 bg-cyan-50 border border-cyan-100 text-cyan-700 px-3 py-1 rounded-full text-xs font-bold mb-6 uppercase tracking-wide">
-          <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-          </svg>
-          MCP Compatible
+        <div class="flex flex-wrap gap-2 mb-6">
+          <div class="inline-flex items-center gap-2 bg-cyan-50 border border-cyan-100 text-cyan-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
+            <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+            MCP Compatible
+          </div>
+          <div class="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 text-gray-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
+            Python 3.11 – 3.14
+          </div>
         </div>
         <h1 class="text-6xl md:text-7xl font-bold tracking-tighter leading-[0.9] mb-8">
           Memory that <br/><span class="text-[#00D4FF]">ages gracefully.</span>
@@ -231,9 +236,9 @@
           <pre class="p-5 font-mono text-sm"><span class="text-gray-500">$</span> pip install yourmemory</pre>
         </div>
         <div class="bg-[#0A192F] text-gray-300 rounded-2xl overflow-hidden">
-          <div class="px-4 py-2 border-b border-gray-800 text-[10px] uppercase tracking-widest text-gray-500 font-mono">2. Get your config</div>
+          <div class="px-4 py-2 border-b border-gray-800 text-[10px] uppercase tracking-widest text-gray-500 font-mono">2. Get your Cline / Cursor config</div>
           <pre class="p-5 font-mono text-sm"><span class="text-gray-500">$</span> yourmemory-path</pre>
-          <div class="px-5 pb-4 text-xs text-gray-500">Prints your full path + ready-to-paste config for Cline, Cursor, Claude Desktop, and more.</div>
+          <div class="px-5 pb-4 text-xs text-gray-500">Prints your full executable path + ready-to-paste JSON config for Cline, Cursor, Windsurf, and more. VS Code doesn't inherit shell PATH — this fixes it.</div>
         </div>
         <div class="bg-[#0A192F] text-gray-300 rounded-2xl overflow-hidden">
           <div class="px-4 py-2 border-b border-gray-800 text-[10px] uppercase tracking-widest text-gray-500 font-mono">3. Claude Code — add to ~/.claude/settings.json</div>

@@ -51,6 +51,8 @@ Importance additionally modulates the decay rate within each category. Memories 
 
 **Zero infrastructure required** — uses DuckDB out of the box. Two commands and you're done.
 
+Supports **Python 3.11, 3.12, 3.13, and 3.14**.
+
 ### 1. Install
 
 ```bash
@@ -91,9 +93,13 @@ Reload Claude Code (`Cmd+Shift+P` → `Developer: Reload Window`).
 
 #### Cline (VS Code)
 
-VS Code doesn't inherit your shell PATH, so use the **full path** from `yourmemory-path`.
+VS Code doesn't inherit your shell PATH. Run this in terminal to get the exact config to paste:
 
-In Cline → **MCP Servers** → **Edit MCP Settings**:
+```bash
+yourmemory-path
+```
+
+Then in Cline → **MCP Servers** → **Edit MCP Settings**, paste the output. It looks like:
 
 ```json
 {
@@ -110,7 +116,7 @@ In Cline → **MCP Servers** → **Edit MCP Settings**:
 }
 ```
 
-Run `yourmemory-path` in terminal — it prints the exact config to paste.
+Restart Cline after saving.
 
 #### Cursor
 
@@ -244,6 +250,7 @@ Runs automatically every 24 hours on startup — no cron needed. Memories below 
 
 - **DuckDB** — default backend, zero setup, native vector similarity (same quality as pgvector)
 - **sentence-transformers** — local embeddings (`all-mpnet-base-v2`, 768 dims, no external service needed)
+- **spaCy 3.8.13+** — local NLP for deduplication and categorization (Python 3.11–3.14 compatible)
 - **APScheduler** — automatic 24h decay job
 - **MCP** — Claude integration via Model Context Protocol
 - **PostgreSQL + pgvector** — optional, for teams / large datasets
