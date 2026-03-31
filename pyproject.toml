@@ -41,8 +41,8 @@ yourmemory = "memory_mcp:run"
 yourmemory-path = "memory_mcp:print_path"
 
 [project.urls]
-Homepage = "https://github.com/sachitrafa/cognitive-ai-memory"
-Repository = "https://github.com/sachitrafa/cognitive-ai-memory"
+Homepage = "https://github.com/sachitrafa/YourMemory"
+Repository = "https://github.com/sachitrafa/YourMemory"
 
 [tool.setuptools]
 py-modules = ["memory_mcp"]
