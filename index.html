@@ -227,7 +227,7 @@
   <!-- SETUP -->
   <section id="setup" class="border-t border-gray-200 bg-white py-24">
     <div class="max-w-3xl mx-auto px-6">
-      <h2 class="text-4xl font-bold tracking-tighter mb-2">Three commands.</h2>
+      <h2 class="text-4xl font-bold tracking-tighter mb-2">Four commands.</h2>
       <p class="text-gray-500 mb-12">Zero infrastructure. DuckDB database created automatically at <code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded">~/.yourmemory/memories.duckdb</code> on first use.</p>
 
       <div class="space-y-4">
@@ -236,12 +236,17 @@
           <pre class="p-5 font-mono text-sm"><span class="text-gray-500">$</span> pip install yourmemory</pre>
         </div>
         <div class="bg-[#0A192F] text-gray-300 rounded-2xl overflow-hidden">
-          <div class="px-4 py-2 border-b border-gray-800 text-[10px] uppercase tracking-widest text-gray-500 font-mono">2. Get your Cline / Cursor config</div>
+          <div class="px-4 py-2 border-b border-gray-800 text-[10px] uppercase tracking-widest text-gray-500 font-mono">2. Setup (run once)</div>
+          <pre class="p-5 font-mono text-sm"><span class="text-gray-500">$</span> yourmemory-setup</pre>
+          <div class="px-5 pb-4 text-xs text-gray-500">Downloads the spaCy language model and initialises the database. Only needed once.</div>
+        </div>
+        <div class="bg-[#0A192F] text-gray-300 rounded-2xl overflow-hidden">
+          <div class="px-4 py-2 border-b border-gray-800 text-[10px] uppercase tracking-widest text-gray-500 font-mono">3. Get your Cline / Cursor config</div>
           <pre class="p-5 font-mono text-sm"><span class="text-gray-500">$</span> yourmemory-path</pre>
           <div class="px-5 pb-4 text-xs text-gray-500">Prints your full executable path + ready-to-paste JSON config for Cline, Cursor, Windsurf, and more. VS Code doesn't inherit shell PATH — this fixes it.</div>
         </div>
         <div class="bg-[#0A192F] text-gray-300 rounded-2xl overflow-hidden">
-          <div class="px-4 py-2 border-b border-gray-800 text-[10px] uppercase tracking-widest text-gray-500 font-mono">3. Claude Code — add to ~/.claude/settings.json</div>
+          <div class="px-4 py-2 border-b border-gray-800 text-[10px] uppercase tracking-widest text-gray-500 font-mono">4. Claude Code — add to ~/.claude/settings.json</div>
           <pre class="p-5 font-mono text-sm text-cyan-100">{
   "mcpServers": {
     "yourmemory": {

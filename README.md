@@ -61,17 +61,23 @@ pip install yourmemory
 
 All dependencies installed automatically. No clone, no Docker, no database setup.
 
-### 2. Get your config
+### 2. Run setup (once)
 
-Run this once to get your exact config:
+```bash
+yourmemory-setup
+```
+
+Downloads the spaCy language model and initialises the database. Run this once after install.
+
+### 3. Get your config
 
 ```bash
 yourmemory-path
 ```
 
-It prints your full executable path and a ready-to-paste config for any MCP client. Copy it.
+Prints your full executable path and a ready-to-paste config for any MCP client. Copy it.
 
-### 3. Wire into your AI client
+### 4. Wire into your AI client
 
 The database is created automatically at `~/.yourmemory/memories.duckdb` on first use.
 
@@ -157,7 +163,7 @@ Restart Claude Desktop.
 
 YourMemory is a standard stdio MCP server. Works with Claude Code, Claude Desktop, Cline, Cursor, Windsurf, Continue, and Zed. Use the full path from `yourmemory-path` if the client doesn't inherit shell PATH.
 
-### 4. Add memory instructions to your project
+### 5. Add memory instructions to your project
 
 Copy `sample_CLAUDE.md` into your project root as `CLAUDE.md` and replace:
 - `YOUR_NAME` — your name (e.g. `Alice`)

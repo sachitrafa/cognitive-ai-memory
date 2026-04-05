@@ -563,6 +563,40 @@ def print_path():
     print("Paste this into your Cline MCP settings:\n")
     print(_json.dumps(config, indent=2))
 
+def setup():
+    """Run once after pip install to download the spaCy model."""
+    import subprocess
+    print("YourMemory setup — installing spaCy language model...")
+    result = subprocess.run(
+        [sys.executable, "-m", "spacy", "download", "en_core_web_sm"],
+        check=False,
+    )
+    if result.returncode == 0:
+        print("✓ spaCy model installed successfully.")
+    else:
+        # Fallback: install via direct wheel URL
+        print("Direct download fallback...")
+        result2 = subprocess.run(
+            [sys.executable, "-m", "pip", "install",
+             "https://github.com/explosion/spacy-models/releases/download/"
+             "en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
+             "--break-system-packages"],
+            check=False,
+        )
+        if result2.returncode == 0:
+            print("✓ spaCy model installed successfully.")
+        else:
+            print("✗ Could not install spaCy model automatically.")
+            print("  Run manually: python -m spacy download en_core_web_sm")
+            print("  YourMemory will still work using the built-in regex fallback.")
+
+    # Also run DB migration
+    from src.db.migrate import migrate
+    migrate()
+    print("✓ Database initialised.")
+    print("\nSetup complete. Run yourmemory-path to get your MCP config.")
+
+
 def run():
     from src.db.migrate import migrate
     migrate()

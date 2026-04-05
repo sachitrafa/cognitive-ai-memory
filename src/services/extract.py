@@ -1,19 +1,28 @@
 import re
-import spacy
-
-try:
-    _nlp = spacy.load("en_core_web_sm")
-except OSError:
-    import subprocess, sys
-    subprocess.run(
-        [sys.executable, "-m", "pip", "install",
-         "https://github.com/explosion/spacy-models/releases/download/"
-         "en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl"],
-        check=True,
-    )
-    _nlp = spacy.load("en_core_web_sm")
+import sys
 
 _QUESTION_WORDS = {"what", "who", "where", "when", "why", "how", "which", "whose", "whom"}
+
+_IMPERATIVE_PATTERNS = [
+    r'^(please|use|try|do|don\'t|make|create|add|remove|delete|update)',
+    r'^(convert|transform|change|modify|fix|help|show|tell)',
+    r'^(install|run|execute|start|stop|restart|configure)',
+]
+
+# Load spaCy if available — falls back to regex if model not installed yet
+# Run `yourmemory-setup` once after pip install to download the model
+_nlp = None
+try:
+    import spacy
+    _nlp = spacy.load("en_core_web_sm")
+except OSError:
+    print(
+        "YourMemory: spaCy model not found. Run `yourmemory-setup` once to install it.\n"
+        "  Falling back to built-in regex categorization.",
+        file=sys.stderr,
+    )
+except Exception:
+    pass
 
 
 def is_question(text: str) -> bool:
@@ -27,10 +36,17 @@ def is_question(text: str) -> bool:
 
 def categorize(text: str) -> str:
     """
-    Use spaCy dependency parse to classify:
-      fact       — declarative sentence with an explicit subject
-      assumption — imperative sentence with no subject (command/instruction)
+    Classify text as fact or assumption.
+    Uses spaCy dependency parse when available, regex heuristics otherwise.
+    Run `yourmemory-setup` to enable spaCy.
     """
-    doc = _nlp(text)
-    has_subject = any(tok.dep_ in ("nsubj", "nsubjpass") for tok in doc)
-    return "fact" if has_subject else "assumption"
+    if _nlp is not None:
+        doc = _nlp(text)
+        has_subject = any(tok.dep_ in ("nsubj", "nsubjpass") for tok in doc)
+        return "fact" if has_subject else "assumption"
+
+    text_lower = text.lower().strip()
+    for pattern in _IMPERATIVE_PATTERNS:
+        if re.match(pattern, text_lower):
+            return "assumption"
+    return "fact"
