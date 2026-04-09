@@ -462,4 +462,4 @@ Licensed under the [YourMemory Non-Commercial License](LICENSE).
 
 **Not permitted:** commercial use of any kind — including SaaS, internal tooling at for-profit companies, or paid services — without a separate written agreement.
 
-For commercial licensing: sachitmisra1@gmail.com
+For commercial licensing: mishrasachit1@gmail.com
