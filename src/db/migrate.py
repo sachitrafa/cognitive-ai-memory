@@ -39,6 +39,14 @@ def migrate():
     conn.close()
     print(f"Migration complete ({backend}).", file=sys.stderr)
 
+    # Bootstrap the graph backend (creates indexes for Neo4j, touches pickle for NetworkX)
+    try:
+        from src.graph import get_graph_backend
+        get_graph_backend()
+        print("Graph backend initialised.", file=sys.stderr)
+    except Exception as exc:
+        print(f"Graph backend init skipped: {exc}", file=sys.stderr)
+
 
 if __name__ == "__main__":
     migrate()

@@ -399,6 +399,23 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
             cur.close()
         conn.close()
 
+        # Index into graph (best-effort; never blocks the response)
+        if memory_id is not None:
+            try:
+                from src.graph.graph_store import index_memory as _graph_index
+                _graph_index(
+                    memory_id=memory_id,
+                    user_id=user_id,
+                    content=final_content,
+                    strength=importance,
+                    importance=importance,
+                    category=category,
+                    embedding=list(embedding),
+                )
+            except Exception as _ge:
+                import sys as _sys
+                print(f"[graph] index_memory failed: {_ge}", file=_sys.stderr)
+
         return [types.TextContent(type="text", text=json.dumps(
             {"stored": 1, "id": memory_id, "content": final_content, "category": category,
              "importance": importance, "agent_id": agent_id, "visibility": visibility,

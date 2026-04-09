@@ -12,6 +12,8 @@ from dotenv import load_dotenv
 
 from src.services.decay import compute_strength
 from src.db.connection import get_backend, get_conn
+from src.graph.graph_store import chain_safe_to_prune
+from src.graph import get_graph_backend
 
 load_dotenv()
 
@@ -39,14 +41,14 @@ def run():
         from psycopg2.extras import RealDictCursor
         cur.close()
         cur = conn.cursor(cursor_factory=RealDictCursor)
-        cur.execute("SELECT id, category, importance, recall_count, last_accessed_at FROM memories")
+        cur.execute("SELECT id, user_id, category, importance, recall_count, last_accessed_at FROM memories")
         edges = [dict(r) for r in cur.fetchall()]
     elif backend == "duckdb":
         from src.db.connection import duckdb_rows
-        result = conn.execute("SELECT id, category, importance, recall_count, last_accessed_at FROM memories")
+        result = conn.execute("SELECT id, user_id, category, importance, recall_count, last_accessed_at FROM memories")
         edges = duckdb_rows(result)
     else:
-        cur.execute("SELECT id, category, importance, recall_count, last_accessed_at FROM memories")
+        cur.execute("SELECT id, user_id, category, importance, recall_count, last_accessed_at FROM memories")
         edges = [dict(r) for r in cur.fetchall()]
 
     updated = 0
@@ -61,14 +63,32 @@ def run():
         )
 
         if strength < PRUNE_THRESHOLD:
+            # Chain-aware: skip pruning if a graph neighbour is still strong
+            user_id = edge.get("user_id", "")
+            if user_id and not chain_safe_to_prune(edge["id"], user_id, PRUNE_THRESHOLD):
+                updated += 1  # kept alive by graph chain
+                continue
+
             if backend == "postgres":
                 cur.execute("DELETE FROM memories WHERE id = %s", (edge["id"],))
             elif backend == "duckdb":
                 conn.execute("DELETE FROM memories WHERE id = ?", [edge["id"]])
             else:
                 cur.execute("DELETE FROM memories WHERE id = ?", (edge["id"],))
+
+            # Remove from graph too
+            try:
+                get_graph_backend().delete_node(edge["id"])
+            except Exception:
+                pass
+
             pruned += 1
         else:
+            # Sync current strength into the graph node
+            try:
+                get_graph_backend().update_node_strength(edge["id"], strength)
+            except Exception:
+                pass
             updated += 1
 
     conn.commit()

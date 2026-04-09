@@ -15,6 +15,12 @@
       background-size: 40px 40px;
     }
     ::selection { background: #cffafe; }
+    .graph-line {
+      stroke-dasharray: 200;
+      stroke-dashoffset: 200;
+      animation: draw 1.2s ease forwards;
+    }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
   </style>
 </head>
 <body class="min-h-screen text-[#0A192F] dot-bg">
@@ -33,9 +39,11 @@
         <span class="font-bold tracking-tighter text-lg">YourMemory</span>
       </div>
       <div class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-500">
-        <a href="#logic"      class="hover:text-[#0A192F] transition-colors">Logic</a>
-        <a href="#benchmarks" class="hover:text-[#0A192F] transition-colors">Benchmarks</a>
-        <a href="https://github.com/sachitrafa/cognitive-ai-memory" target="_blank"
+        <a href="#logic"       class="hover:text-[#0A192F] transition-colors">Logic</a>
+        <a href="#graph"       class="hover:text-[#0A192F] transition-colors">Graph</a>
+        <a href="#multiagent"  class="hover:text-[#0A192F] transition-colors">Multi-Agent</a>
+        <a href="#benchmarks"  class="hover:text-[#0A192F] transition-colors">Benchmarks</a>
+        <a href="https://github.com/sachitrafa/YourMemory" target="_blank"
            class="flex items-center gap-1.5 hover:text-[#0A192F] transition-colors">
           <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57
@@ -74,13 +82,16 @@
           <div class="inline-flex items-center gap-2 bg-gray-50 border border-gray-200 text-gray-600 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
             Python 3.11 – 3.14
           </div>
+          <div class="inline-flex items-center gap-2 bg-purple-50 border border-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">
+            v1.3.0 — Graph Engine
+          </div>
         </div>
         <h1 class="text-6xl md:text-7xl font-bold tracking-tighter leading-[0.9] mb-8">
           Memory that <br/><span class="text-[#00D4FF]">ages gracefully.</span>
         </h1>
         <p class="text-xl text-gray-600 mb-10 max-w-lg leading-relaxed">
           Biologically-inspired persistent memory for AI agents.
-          Automatically prunes stale data and reinforces useful context using the Ebbinghaus forgetting curve.
+          Automatically prunes stale data, reinforces useful context, and connects related memories through a graph layer.
         </p>
 
         <div class="flex items-center bg-white border-2 border-[#0A192F] rounded-xl overflow-hidden p-1 w-fit shadow-[4px_4px_0px_0px_rgba(10,25,47,1)]">
@@ -99,19 +110,25 @@
             <div class="w-2.5 h-2.5 rounded-full bg-red-500"></div>
             <div class="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
             <div class="w-2.5 h-2.5 rounded-full bg-green-500"></div>
-            <span class="ml-2 text-[10px] uppercase tracking-widest text-gray-500">cognitive-runtime</span>
+            <span class="ml-2 text-[10px] uppercase tracking-widest text-gray-500">yourmemory · recall</span>
           </div>
           <div class="p-6 space-y-3 leading-relaxed">
-            <p class="text-gray-500"># Querying memory: "Frontend Stack"</p>
+            <p class="text-gray-500"># recall("Python backend services")</p>
+            <p class="text-gray-600 text-xs">── Round 1: vector search ──</p>
             <div class="flex justify-between items-center bg-cyan-950/30 border-l-2 border-cyan-400 px-3 py-2 rounded-r">
-              <span class="text-cyan-100">"Prefers Vue.js"</span>
-              <span class="text-cyan-400 font-bold ml-4">0.94 Strength</span>
+              <span class="text-cyan-100">"Sachit uses Python at MongoDB"</span>
+              <span class="text-cyan-400 font-bold ml-4">sim 0.61</span>
+            </div>
+            <p class="text-gray-600 text-xs mt-1">── Round 2: graph expansion ──</p>
+            <div class="flex justify-between items-center bg-purple-950/30 border-l-2 border-purple-400 px-3 py-2 rounded-r">
+              <span class="text-purple-200">"Docker + K8s production deploys"</span>
+              <span class="text-purple-400 font-bold ml-4">via graph</span>
             </div>
             <div class="flex justify-between items-center opacity-40 italic px-3 py-2">
               <span>"Uses React"</span>
               <span class="text-red-400 ml-4">0.04 (Decayed)</span>
             </div>
-            <p class="text-green-500 pt-3 border-t border-gray-800">✓ Pruning complete — 1 stale fact removed.</p>
+            <p class="text-green-500 pt-3 border-t border-gray-800">✓ 1 stale fact pruned · 1 graph neighbour surfaced</p>
           </div>
         </div>
       </div>
@@ -183,7 +200,7 @@
               <svg class="mt-1 shrink-0" width="20" height="20" fill="none" stroke="#00D4FF" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
               <div>
                 <h4 class="font-bold text-lg leading-tight mb-1">100% Privacy</h4>
-                <p class="text-gray-400">Sensitive data lives in your SQLite file, never in a vendor's managed cloud.</p>
+                <p class="text-gray-400">Sensitive data lives in your local DuckDB file, never in a vendor's managed cloud.</p>
               </div>
             </li>
           </ul>
@@ -194,39 +211,247 @@
 
   <!-- CORE FEATURES -->
   <section id="logic" class="max-w-6xl mx-auto px-6 py-32">
+    <div class="text-center mb-16">
+      <h2 class="text-4xl font-bold tracking-tighter mb-3">Three layers. One engine.</h2>
+      <p class="text-gray-500 max-w-xl mx-auto">Vector search finds what you asked for. The graph finds what you forgot to ask for. Ebbinghaus decides what survives.</p>
+    </div>
     <div class="grid md:grid-cols-3 gap-12">
       <!-- Feature 1 -->
       <div class="group">
         <div class="w-12 h-12 bg-white border border-gray-200 rounded-xl flex items-center justify-center mb-6 shadow-sm group-hover:border-[#00D4FF] transition-colors duration-200">
-          <!-- Brain / decay icon -->
           <svg width="22" height="22" fill="none" stroke="#0A192F" stroke-width="1.8" viewBox="0 0 24 24">
             <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.46 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/>
             <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.46 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/>
           </svg>
         </div>
         <h3 class="text-xl font-bold mb-3">Biologically Pruned</h3>
-        <p class="text-gray-500 leading-relaxed">Adaptive decay rates per category — strategy memories persist, environment noise fades in days.</p>
+        <p class="text-gray-500 leading-relaxed">Adaptive decay rates per category — strategy memories persist ~38 days, environment noise fades in ~11 days. Chain-aware: related memories stay alive together.</p>
       </div>
       <!-- Feature 2 -->
       <div class="group">
         <div class="w-12 h-12 bg-white border border-gray-200 rounded-xl flex items-center justify-center mb-6 shadow-sm group-hover:border-[#00D4FF] transition-colors duration-200">
           <svg width="22" height="22" fill="none" stroke="#0A192F" stroke-width="1.8" viewBox="0 0 24 24">
-            <polyline points="4 17 10 11 4 5"/>
-            <line x1="12" y1="19" x2="20" y2="19"/>
+            <circle cx="6"  cy="12" r="2"/><circle cx="18" cy="5"  r="2"/><circle cx="18" cy="19" r="2"/>
+            <line x1="8" y1="11" x2="16" y2="6"/><line x1="8" y1="13" x2="16" y2="18"/>
           </svg>
         </div>
-        <h3 class="text-xl font-bold mb-3">Fully Local</h3>
-        <p class="text-gray-500 leading-relaxed">DuckDB default, no Docker, no external API keys. <code class="text-xs bg-gray-100 px-1 py-0.5 rounded">pip install yourmemory</code> and you're done.</p>
+        <h3 class="text-xl font-bold mb-3">Hybrid Graph + Vector</h3>
+        <p class="text-gray-500 leading-relaxed">Two-round retrieval: cosine similarity finds exact matches, BFS graph traversal surfaces related memories that scored below the cut-off. NetworkX default, Neo4j opt-in.</p>
       </div>
       <!-- Feature 3 -->
       <div class="group">
         <div class="w-12 h-12 bg-white border border-gray-200 rounded-xl flex items-center justify-center mb-6 shadow-sm group-hover:border-[#00D4FF] transition-colors duration-200">
           <svg width="22" height="22" fill="none" stroke="#0A192F" stroke-width="1.8" viewBox="0 0 24 24">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
           </svg>
         </div>
-        <h3 class="text-xl font-bold mb-3">Enterprise Private</h3>
-        <p class="text-gray-500 leading-relaxed">Data never leaves your machine. Works with Claude Code, Cline, Cursor, Windsurf, and any MCP client.</p>
+        <h3 class="text-xl font-bold mb-3">Multi-Agent Memory</h3>
+        <p class="text-gray-500 leading-relaxed">Multiple agents share context or keep secrets. API keys (<code class="text-xs bg-gray-100 px-1 py-0.5 rounded">ym_</code> prefix) authenticate each agent. Shared vs private visibility per memory.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- GRAPH ENGINE SECTION -->
+  <section id="graph" class="border-t border-gray-200 bg-white py-24">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="grid lg:grid-cols-2 gap-16 items-center">
+        <div>
+          <div class="inline-flex items-center gap-2 bg-purple-50 border border-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide mb-6">
+            New in v1.3.0
+          </div>
+          <h2 class="text-4xl font-bold tracking-tighter mb-6">Two-round retrieval.</h2>
+          <p class="text-gray-500 leading-relaxed mb-8">
+            Vector search alone misses memories that share context but not vocabulary.
+            The graph layer catches them.
+          </p>
+          <div class="space-y-5">
+            <div class="flex gap-4">
+              <div class="w-8 h-8 bg-cyan-50 border border-cyan-200 rounded-lg flex items-center justify-center shrink-0 font-bold text-cyan-700 text-sm">1</div>
+              <div>
+                <h4 class="font-semibold mb-1">Vector search</h4>
+                <p class="text-gray-500 text-sm">Cosine similarity returns top-k above threshold. Fast, precise for vocabulary matches.</p>
+              </div>
+            </div>
+            <div class="flex gap-4">
+              <div class="w-8 h-8 bg-purple-50 border border-purple-200 rounded-lg flex items-center justify-center shrink-0 font-bold text-purple-700 text-sm">2</div>
+              <div>
+                <h4 class="font-semibold mb-1">Graph BFS expansion</h4>
+                <p class="text-gray-500 text-sm">BFS from Round 1 seeds up to 2 hops. Surfaces related memories that scored below the similarity cut-off.</p>
+              </div>
+            </div>
+            <div class="flex gap-4">
+              <div class="w-8 h-8 bg-green-50 border border-green-200 rounded-lg flex items-center justify-center shrink-0 font-bold text-green-700 text-sm">↻</div>
+              <div>
+                <h4 class="font-semibold mb-1">Recall propagation</h4>
+                <p class="text-gray-500 text-sm">Recalling a memory boosts its graph neighbours' recall count — related memories stay fresh automatically.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Graph visual -->
+        <div class="bg-[#0A192F] rounded-2xl p-8 border border-gray-800">
+          <p class="text-gray-500 font-mono text-xs mb-6 uppercase tracking-widest">Semantic graph — edge weight = sim × verb_weight</p>
+          <svg viewBox="0 0 340 220" class="w-full" xmlns="http://www.w3.org/2000/svg">
+            <!-- Edges -->
+            <line x1="170" y1="110" x2="80"  y2="60"  stroke="#00D4FF" stroke-width="2" stroke-opacity="0.5"/>
+            <line x1="170" y1="110" x2="260" y2="60"  stroke="#00D4FF" stroke-width="1.5" stroke-opacity="0.35"/>
+            <line x1="170" y1="110" x2="80"  y2="170" stroke="#a855f7" stroke-width="1" stroke-opacity="0.25" stroke-dasharray="4 3"/>
+            <!-- Edge labels -->
+            <text x="108" y="76"  fill="#00D4FF" font-size="9" font-family="monospace" opacity="0.7">w=0.34</text>
+            <text x="200" y="76"  fill="#00D4FF" font-size="9" font-family="monospace" opacity="0.5">w=0.29</text>
+            <!-- Nodes -->
+            <circle cx="170" cy="110" r="28" fill="#0e2a45" stroke="#00D4FF" stroke-width="2"/>
+            <text x="170" y="106" text-anchor="middle" fill="#00D4FF" font-size="9" font-family="monospace" font-weight="bold">Python</text>
+            <text x="170" y="118" text-anchor="middle" fill="#00D4FF" font-size="8" font-family="monospace">MongoDB</text>
+
+            <circle cx="80" cy="60" r="22" fill="#0e2a45" stroke="#00D4FF" stroke-width="1.5"/>
+            <text x="80" y="56"  text-anchor="middle" fill="#cbd5e1" font-size="8" font-family="monospace">DuckDB</text>
+            <text x="80" y="67"  text-anchor="middle" fill="#cbd5e1" font-size="8" font-family="monospace">spaCy</text>
+
+            <circle cx="260" cy="60" r="22" fill="#0e2a45" stroke="#00D4FF" stroke-width="1.5"/>
+            <text x="260" y="56" text-anchor="middle" fill="#cbd5e1" font-size="8" font-family="monospace">Docker</text>
+            <text x="260" y="67" text-anchor="middle" fill="#cbd5e1" font-size="8" font-family="monospace">K8s</text>
+
+            <circle cx="80" cy="170" r="18" fill="#0e2a45" stroke="#4b5563" stroke-width="1" stroke-dasharray="3 2"/>
+            <text x="80" y="167" text-anchor="middle" fill="#6b7280" font-size="8" font-family="monospace">dark</text>
+            <text x="80" y="177" text-anchor="middle" fill="#6b7280" font-size="8" font-family="monospace">mode</text>
+
+            <!-- Legend -->
+            <line x1="170" y1="195" x2="185" y2="195" stroke="#00D4FF" stroke-width="2"/>
+            <text x="190" y="198" fill="#6b7280" font-size="8" font-family="monospace">connected (sim ≥ 0.4)</text>
+            <line x1="170" y1="210" x2="185" y2="210" stroke="#4b5563" stroke-width="1" stroke-dasharray="4 3"/>
+            <text x="190" y="213" fill="#6b7280" font-size="8" font-family="monospace">isolated (sim &lt; 0.4)</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Chain-aware pruning callout -->
+      <div class="mt-16 grid md:grid-cols-2 gap-6">
+        <div class="bg-gray-50 border border-gray-200 rounded-2xl p-8">
+          <h3 class="font-bold text-lg mb-3 flex items-center gap-2">
+            <svg width="18" height="18" fill="none" stroke="#0A192F" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            Chain-aware pruning
+          </h3>
+          <p class="text-gray-500 text-sm leading-relaxed">Before deleting a decayed memory, the decay job checks its graph neighbours. If any neighbour is still strong, the memory is kept alive. Related facts age together — no isolated deletions that break a cluster.</p>
+          <div class="mt-4 bg-white border border-gray-200 rounded-xl p-4 font-mono text-xs text-gray-600">
+            node [3] strength = 0.03 &lt; threshold<br/>
+            <span class="text-green-600">→ neighbour [1] strength = 0.90 ≥ threshold</span><br/>
+            <span class="text-cyan-600">→ chain_safe_to_prune = False — kept alive</span>
+          </div>
+        </div>
+        <div class="bg-gray-50 border border-gray-200 rounded-2xl p-8">
+          <h3 class="font-bold text-lg mb-3 flex items-center gap-2">
+            <svg width="18" height="18" fill="none" stroke="#0A192F" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            Recall propagation
+          </h3>
+          <p class="text-gray-500 text-sm leading-relaxed">Recalling memory A automatically bumps the recall count of A's graph neighbours, weighted by edge strength. Frequently-used memories keep their entire context cluster fresh through the decay formula.</p>
+          <div class="mt-4 bg-white border border-gray-200 rounded-xl p-4 font-mono text-xs text-gray-600">
+            recall("Python backend")<br/>
+            <span class="text-cyan-600">→ [1] Python/MongoDB recalled</span><br/>
+            <span class="text-purple-600">→ [2] DuckDB/spaCy recall_count++ (w=0.34)</span><br/>
+            <span class="text-purple-600">→ [5] Docker/K8s recall_count++  (w=0.29)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MULTI-AGENT SECTION -->
+  <section id="multiagent" class="border-t border-gray-200 bg-gray-50 py-24">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center mb-16">
+        <h2 class="text-4xl font-bold tracking-tighter mb-3">Multi-agent shared memory.</h2>
+        <p class="text-gray-500 max-w-2xl mx-auto">Multiple AI agents share context or keep secrets. Each agent authenticates with an API key. You control exactly what each agent can read and write.</p>
+      </div>
+
+      <div class="grid lg:grid-cols-3 gap-6 mb-12">
+        <!-- Step 1 -->
+        <div class="bg-white border border-gray-200 rounded-2xl p-6">
+          <div class="w-10 h-10 bg-[#0A192F] rounded-xl flex items-center justify-center mb-5 text-white font-bold text-sm">1</div>
+          <h3 class="font-bold text-lg mb-2">Register an agent</h3>
+          <p class="text-gray-500 text-sm mb-4">Each agent gets a unique <code class="text-xs bg-gray-100 px-1 py-0.5 rounded">ym_</code> API key. Shown once, hashed with SHA-256 — never stored in plaintext.</p>
+          <div class="bg-[#0A192F] rounded-xl p-4 font-mono text-xs text-gray-300">
+            <span class="text-gray-500">from</span> src.services.api_keys <span class="text-gray-500">import</span> register_agent<br/><br/>
+            result = register_agent(<br/>
+            &nbsp;&nbsp;agent_id=<span class="text-cyan-300">"coding-agent"</span>,<br/>
+            &nbsp;&nbsp;user_id=<span class="text-cyan-300">"sachit"</span>,<br/>
+            &nbsp;&nbsp;can_read=[<span class="text-cyan-300">"shared"</span>, <span class="text-cyan-300">"private"</span>],<br/>
+            )<br/>
+            <span class="text-green-400"># → ym_xxxx (save once)</span>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="bg-white border border-gray-200 rounded-2xl p-6">
+          <div class="w-10 h-10 bg-[#0A192F] rounded-xl flex items-center justify-center mb-5 text-white font-bold text-sm">2</div>
+          <h3 class="font-bold text-lg mb-2">Store shared or private</h3>
+          <p class="text-gray-500 text-sm mb-4">Pass the API key in any MCP call. Set <code class="text-xs bg-gray-100 px-1 py-0.5 rounded">visibility</code> to control who can see it.</p>
+          <div class="bg-[#0A192F] rounded-xl p-4 font-mono text-xs text-gray-300">
+            <span class="text-gray-500"># shared — all agents see this</span><br/>
+            store_memory(<br/>
+            &nbsp;&nbsp;content=<span class="text-cyan-300">"DB is Postgres 16"</span>,<br/>
+            &nbsp;&nbsp;api_key=<span class="text-cyan-300">"ym_xxxx"</span>,<br/>
+            &nbsp;&nbsp;visibility=<span class="text-cyan-300">"shared"</span><br/>
+            )<br/><br/>
+            <span class="text-gray-500"># private — only this agent</span><br/>
+            store_memory(<br/>
+            &nbsp;&nbsp;content=<span class="text-cyan-300">"staging key sk-xxx"</span>,<br/>
+            &nbsp;&nbsp;visibility=<span class="text-cyan-300">"private"</span><br/>
+            )
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="bg-white border border-gray-200 rounded-2xl p-6">
+          <div class="w-10 h-10 bg-[#0A192F] rounded-xl flex items-center justify-center mb-5 text-white font-bold text-sm">3</div>
+          <h3 class="font-bold text-lg mb-2">Recall with scope</h3>
+          <p class="text-gray-500 text-sm mb-4">Without a key → shared memories only. With a key → shared + that agent's private memories.</p>
+          <div class="bg-[#0A192F] rounded-xl p-4 font-mono text-xs text-gray-300">
+            <span class="text-gray-500"># coding-agent recalls</span><br/>
+            recall_memory(<br/>
+            &nbsp;&nbsp;query=<span class="text-cyan-300">"database production"</span>,<br/>
+            &nbsp;&nbsp;api_key=<span class="text-cyan-300">"ym_xxxx"</span><br/>
+            )<br/>
+            <span class="text-green-400"># ← shared + private memories</span><br/><br/>
+            <span class="text-gray-500"># review-agent (different key)</span><br/>
+            recall_memory(query=<span class="text-cyan-300">"database"</span>)<br/>
+            <span class="text-green-400"># ← shared memories only</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visibility matrix -->
+      <div class="bg-white border border-gray-200 rounded-2xl p-8 max-w-2xl mx-auto">
+        <h3 class="font-bold text-lg mb-6 text-center">Visibility matrix</h3>
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-100">
+              <th class="text-left pb-3 text-gray-400 font-medium">Memory stored as</th>
+              <th class="text-center pb-3 text-gray-400 font-medium">Owner agent</th>
+              <th class="text-center pb-3 text-gray-400 font-medium">Other agents</th>
+              <th class="text-center pb-3 text-gray-400 font-medium">No API key</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            <tr class="py-3">
+              <td class="py-3"><code class="text-xs bg-cyan-50 text-cyan-700 px-2 py-0.5 rounded">shared</code></td>
+              <td class="text-center py-3 text-green-600 font-bold">✓</td>
+              <td class="text-center py-3 text-green-600 font-bold">✓</td>
+              <td class="text-center py-3 text-green-600 font-bold">✓</td>
+            </tr>
+            <tr>
+              <td class="py-3"><code class="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded">private</code></td>
+              <td class="text-center py-3 text-green-600 font-bold">✓</td>
+              <td class="text-center py-3 text-red-400">✗</td>
+              <td class="text-center py-3 text-red-400">✗</td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="text-xs text-gray-400 mt-6 text-center">Keys hashed with SHA-256 before storage. Revoke anytime with <code class="bg-gray-100 px-1 py-0.5 rounded">revoke_agent(agent_id, user_id)</code>.</p>
       </div>
     </div>
   </section>
@@ -250,7 +475,7 @@
         <div class="bg-[#0A192F] text-gray-300 rounded-2xl overflow-hidden">
           <div class="px-4 py-2 border-b border-gray-800 text-[10px] uppercase tracking-widest text-gray-500 font-mono">3. Get your Cline / Cursor config</div>
           <pre class="p-5 font-mono text-sm"><span class="text-gray-500">$</span> yourmemory-path</pre>
-          <div class="px-5 pb-4 text-xs text-gray-500">Prints your full executable path + ready-to-paste JSON config for Cline, Cursor, Windsurf, and more. VS Code doesn't inherit shell PATH — this fixes it.</div>
+          <div class="px-5 pb-4 text-xs text-gray-500">Prints your full executable path + ready-to-paste JSON config for Cline, Cursor, Windsurf, and more.</div>
         </div>
         <div class="bg-[#0A192F] text-gray-300 rounded-2xl overflow-hidden">
           <div class="px-4 py-2 border-b border-gray-800 text-[10px] uppercase tracking-widest text-gray-500 font-mono">4. Claude Code — add to ~/.claude/settings.json</div>
@@ -289,6 +514,13 @@
           <pre class="p-5 font-mono text-sm">DATABASE_URL=postgresql://YOUR_USER@localhost:5432/yourmemory</pre>
         </div>
         <p class="text-xs text-gray-400 mt-3">Backend selected automatically — <code class="text-xs bg-gray-100 px-1 py-0.5 rounded">postgresql://</code> → Postgres + pgvector, anything else → DuckDB.</p>
+
+        <div class="mt-6 bg-[#0A192F] text-gray-300 rounded-2xl overflow-hidden">
+          <div class="px-4 py-2 border-b border-gray-800 text-[10px] uppercase tracking-widest text-gray-500 font-mono">Neo4j graph backend (opt-in — scale)</div>
+          <pre class="p-5 font-mono text-sm"><span class="text-gray-500">$</span> pip install 'yourmemory[neo4j]'
+<span class="text-gray-500">$</span> GRAPH_BACKEND=neo4j yourmemory</pre>
+        </div>
+        <p class="text-xs text-gray-400 mt-3">Default graph backend is NetworkX (zero setup). Switch to Neo4j for production scale via <code class="text-xs bg-gray-100 px-1 py-0.5 rounded">GRAPH_BACKEND=neo4j</code>.</p>
       </div>
     </div>
   </section>
@@ -308,7 +540,7 @@
       <p class="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3">YourMemory MCP</p>
       <p class="text-gray-500 text-sm max-w-sm mx-auto">Infrastructure for the Agentic Era. Built locally.</p>
       <div class="mt-8 pt-8 border-t border-gray-100 text-[10px] text-gray-300 uppercase tracking-widest">
-        © 2026 Sachit Misra
+        © 2026 Sachit Misra · Non-Commercial License · <a href="https://github.com/sachitrafa/YourMemory/blob/main/LICENSE" target="_blank" class="underline hover:text-gray-400">View License</a>
       </div>
     </div>
   </footer>

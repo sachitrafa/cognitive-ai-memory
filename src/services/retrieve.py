@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from .embed import embed
 from .decay import compute_strength
 from src.db.connection import get_backend, get_conn
+from src.graph.graph_store import expand_with_graph, propagate_recall
 
 load_dotenv()
 
@@ -38,24 +39,194 @@ def _cosine(a: list, b: list) -> float:
 
 def retrieve(user_id: str, query: str, top_k: int = 5, agent_id: str = None) -> dict:
     """
-    1. Embed the query.
-    2. Find candidates by cosine similarity above threshold.
+    Round 1 — vector search (cosine similarity):
        - DuckDB:   native array_cosine_similarity (default)
        - Postgres: pgvector operator
        - SQLite:   Python numpy cosine (legacy)
-    3. Score each: similarity × Ebbinghaus strength.
-    4. Reinforce high-scoring memories (bump recall_count).
-    5. Return context string + structured list.
+
+    Round 2 — graph expansion (multi-hop BFS from Round 1 seeds):
+       Fetches additional memories linked by graph edges, merged and re-ranked.
+
+    Recall propagation:
+       High-similarity memories boost their graph neighbours' recall_count.
     """
     query_embedding = embed(query)
     backend = get_backend()
     is_short = len(query.split()) <= 3
 
+    # Round 1: vector search
     if backend == "postgres":
-        return _retrieve_postgres(user_id, query_embedding, top_k, agent_id)
-    if backend == "duckdb":
-        return _retrieve_duckdb(user_id, query_embedding, top_k, agent_id, is_short=is_short)
-    return _retrieve_sqlite(user_id, query_embedding, top_k, agent_id, is_short=is_short)
+        result = _retrieve_postgres(user_id, query_embedding, top_k, agent_id)
+    elif backend == "duckdb":
+        result = _retrieve_duckdb(user_id, query_embedding, top_k, agent_id, is_short=is_short)
+    else:
+        result = _retrieve_sqlite(user_id, query_embedding, top_k, agent_id, is_short=is_short)
+
+    # Round 2: graph expansion
+    seed_ids = [m["id"] for m in result.get("memories", [])]
+    if seed_ids:
+        extra_ids = expand_with_graph(seed_ids, user_id, top_k=top_k)
+        existing_ids = set(seed_ids)
+        new_ids = [i for i in extra_ids if i not in existing_ids]
+        if new_ids:
+            extra = _fetch_by_ids(new_ids, user_id, backend)
+            result = _merge_graph_results(result, extra, top_k)
+
+        # Recall propagation: boost graph neighbours of reinforced memories
+        reinforced = [m for m in result.get("memories", [])
+                      if m.get("similarity", 0) >= REINFORCE_THRESHOLD]
+        for m in reinforced:
+            boosted_ids = propagate_recall(m["id"], user_id)
+            if boosted_ids:
+                _bump_recall_count(boosted_ids, backend)
+
+    return result
+
+
+# ── Graph expansion helpers ───────────────────────────────────────────────────
+
+def _fetch_by_ids(ids: list, user_id: str, backend: str) -> list:
+    """Fetch memory rows by primary key list, return scored dicts."""
+    if not ids:
+        return []
+    conn = get_conn()
+    rows = []
+    try:
+        if backend == "postgres":
+            from psycopg2.extras import RealDictCursor
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+            cur.execute(
+                "SELECT id, content, category, importance, recall_count, last_accessed_at,"
+                "       agent_id, visibility FROM memories WHERE id = ANY(%s) AND user_id = %s",
+                (ids, user_id),
+            )
+            rows = [dict(r) for r in cur.fetchall()]
+            cur.close()
+        elif backend == "duckdb":
+            from src.db.connection import duckdb_rows
+            placeholders = ", ".join("?" * len(ids))
+            result = conn.execute(
+                f"SELECT id, content, category, importance, recall_count, last_accessed_at,"
+                f"       agent_id, visibility FROM memories WHERE id IN ({placeholders}) AND user_id = ?",
+                ids + [user_id],
+            )
+            rows = duckdb_rows(result)
+        else:
+            cur = conn.cursor()
+            placeholders = ", ".join("?" * len(ids))
+            cur.execute(
+                f"SELECT id, content, category, importance, recall_count, last_accessed_at,"
+                f"       agent_id, visibility FROM memories WHERE id IN ({placeholders}) AND user_id = ?",
+                ids + [user_id],
+            )
+            rows = [dict(r) for r in cur.fetchall()]
+            cur.close()
+    except Exception:
+        pass
+    finally:
+        conn.close()
+
+    scored = []
+    for m in rows:
+        strength = compute_strength(
+            last_accessed_at=_parse_dt(m["last_accessed_at"]),
+            recall_count=m["recall_count"],
+            importance=m["importance"],
+            category=m["category"],
+        )
+        # Graph-expanded memories: use strength as score proxy (no direct similarity)
+        scored.append({
+            **m,
+            "similarity": 0.5,   # neutral; edge_weight already filtered by graph
+            "strength":   strength,
+            "score":      0.5 * strength,
+            "via_graph":  True,
+        })
+    return scored
+
+
+def _merge_graph_results(result: dict, extra: list, top_k: int) -> dict:
+    """Merge graph-expanded memories into vector results, re-rank, trim to top_k."""
+    if not extra:
+        return result
+
+    existing = result.get("memories", [])
+    existing_ids = {m["id"] for m in existing}
+    new_entries = [m for m in extra if m["id"] not in existing_ids]
+    if not new_entries:
+        return result
+
+    merged = existing + new_entries
+    merged.sort(key=lambda x: x["score"], reverse=True)
+    top = merged[:top_k]
+
+    facts       = [m for m in top if m["category"] == "fact"]
+    assumptions = [m for m in top if m["category"] == "assumption"]
+    strategies  = [m for m in top if m["category"] == "strategy"]
+    failures    = [m for m in top if m["category"] == "failure"]
+
+    context_parts = []
+    if facts:
+        context_parts.append("[Facts]\n" + "\n".join(m["content"] for m in facts))
+    if assumptions:
+        context_parts.append("[Assumptions]\n" + "\n".join(m["content"] for m in assumptions))
+    if strategies:
+        context_parts.append("[Strategies]\n" + "\n".join(m["content"] for m in strategies))
+    if failures:
+        context_parts.append("[Failures]\n" + "\n".join(m["content"] for m in failures))
+
+    return {
+        "memoriesFound": len(top),
+        "context":       "\n\n".join(context_parts),
+        "memories": [
+            {
+                "id":         m["id"],
+                "content":    m["content"],
+                "category":   m["category"],
+                "agent_id":   m.get("agent_id"),
+                "visibility": m.get("visibility"),
+                "importance": round(m["importance"], 4),
+                "strength":   round(m["strength"], 4),
+                "similarity": round(m["similarity"], 4),
+                "score":      round(m["score"], 4),
+            }
+            for m in top
+        ],
+    }
+
+
+def _bump_recall_count(ids: list, backend: str) -> None:
+    """Increment recall_count for a list of memory IDs (graph propagation)."""
+    if not ids:
+        return
+    conn = get_conn()
+    try:
+        if backend == "postgres":
+            cur = conn.cursor()
+            cur.execute(
+                "UPDATE memories SET recall_count = recall_count + 1 WHERE id = ANY(%s)",
+                (ids,),
+            )
+            conn.commit()
+            cur.close()
+        elif backend == "duckdb":
+            placeholders = ", ".join("?" * len(ids))
+            conn.execute(
+                f"UPDATE memories SET recall_count = recall_count + 1 WHERE id IN ({placeholders})",
+                ids,
+            )
+        else:
+            cur = conn.cursor()
+            for mid in ids:
+                cur.execute(
+                    "UPDATE memories SET recall_count = recall_count + 1 WHERE id = ?", (mid,)
+                )
+            conn.commit()
+            cur.close()
+    except Exception:
+        pass
+    finally:
+        conn.close()
 
 
 # ── Postgres path ─────────────────────────────────────────────────────────────
