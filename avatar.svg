@@ -1,0 +1,16 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="#0A192F"/>
+
+  <!-- Logo mark — centered in 512x512 -->
+  <!-- Base bar -->
+  <rect x="106" y="320" width="300" height="38" rx="8" fill="white"/>
+  <!-- Mid bar -->
+  <rect x="156" y="262" width="200" height="38" rx="8" fill="white"/>
+  <!-- Left short bar -->
+  <rect x="206" y="204" width="60" height="38" rx="8" fill="white"/>
+  <!-- Right cyan accent -->
+  <rect x="286" y="204" width="22" height="38" rx="6" fill="#00D4FF"/>
+  <!-- Top cyan dot -->
+  <rect x="245" y="146" width="22" height="38" rx="6" fill="#00D4FF" fill-opacity="0.65"/>
+</svg>
