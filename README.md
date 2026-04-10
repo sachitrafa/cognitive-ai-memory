@@ -456,7 +456,7 @@ Benchmarks use the [LoCoMo](https://github.com/snap-research/locomo) dataset by 
 
 Copyright 2026 **Sachit Misra**
 
-Licensed under the [YourMemory Non-Commercial License](LICENSE).
+Licensed under [CC-BY-NC-4.0](LICENSE) (Creative Commons Attribution-NonCommercial 4.0).
 
 **Free for:** personal use, education, academic research, open-source projects.
 

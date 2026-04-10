@@ -1,74 +1,29 @@
-YourMemory Non-Commercial License
-Copyright (c) 2026 Sachit Misra. All rights reserved.
+Creative Commons Attribution-NonCommercial 4.0 International
 
-TERMS AND CONDITIONS
+Copyright (c) 2026 Sachit Misra
 
-1. GRANT OF LICENSE
+This work is licensed under the Creative Commons
+Attribution-NonCommercial 4.0 International License.
 
-   Subject to the terms of this License, the copyright holder grants you
-   a worldwide, royalty-free, non-exclusive, non-transferable license to:
+You are free to:
+  Share — copy and redistribute the material in any medium or format
+  Adapt — remix, transform, and build upon the material
 
-   a) Use, copy, and run this software for personal, educational, academic,
-      and non-commercial research purposes only.
+Under the following terms:
+  Attribution   — You must give appropriate credit to Sachit Misra,
+                  provide a link to the license, and indicate if changes
+                  were made.
+  NonCommercial — You may not use the material for commercial purposes.
+                  This includes but is not limited to: selling access,
+                  incorporating into a paid product or SaaS, or using
+                  internally at a for-profit company to reduce costs or
+                  generate revenue.
 
-   b) Modify the source code for the above permitted purposes.
+No additional restrictions — You may not apply legal terms or
+technological measures that legally restrict others from doing anything
+the license permits.
 
-   c) Share unmodified or modified copies with others, provided that:
-      - This License file is included in full with every copy.
-      - You clearly attribute the original work to Sachit Misra.
-      - The copy is not used for any commercial purpose.
-
-2. RESTRICTIONS — THE FOLLOWING ARE PROHIBITED WITHOUT WRITTEN PERMISSION
-
-   a) Commercial use of any kind, including but not limited to:
-      - Selling, licensing, or sublicensing this software or any derivative.
-      - Incorporating this software into a commercial product or service.
-      - Using this software to provide paid services, SaaS, or consulting.
-      - Using this software internally at a for-profit company to reduce
-        costs or generate revenue, directly or indirectly.
-
-   b) Removing or altering any copyright, attribution, or license notice.
-
-   c) Using the name "YourMemory", the project logo, or the name
-      "Sachit Misra" to endorse or promote products derived from this
-      software without prior written consent.
-
-3. PERMITTED USES (examples, non-exhaustive)
-
-   - University coursework, research papers, or academic projects.
-   - Personal hobby projects with no revenue or commercial intent.
-   - Open-source projects released under a compatible non-commercial license.
-   - Demonstrations, talks, or educational content about AI memory systems.
-
-4. COMMERCIAL LICENSING
-
-   If you wish to use YourMemory for commercial purposes, contact:
-   sachitmisra1@gmail.com to obtain a separate commercial license.
-
-5. CONTRIBUTIONS
-
-   By submitting a contribution (pull request, patch, or otherwise) to this
-   project, you agree that your contribution is made under the same terms as
-   this License, and you grant the copyright holder an irrevocable right to
-   use, modify, and relicense your contribution.
-
-6. DISCLAIMER OF WARRANTY
-
-   THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-   FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. IN NO EVENT SHALL
-   THE COPYRIGHT HOLDER BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY,
-   WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF,
-   OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-   SOFTWARE.
-
-7. TERMINATION
-
-   This License and the rights granted hereunder terminate automatically if
-   you violate any term of this License. Upon termination you must cease all
-   use and destroy all copies of the software in your possession.
-
----
+Full license text: https://creativecommons.org/licenses/by-nc/4.0/legalcode
 
 For commercial licensing inquiries: mishrasachit1@gmail.com
 Project: https://github.com/sachitrafa/YourMemory
