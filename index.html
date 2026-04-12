@@ -43,6 +43,7 @@
         <a href="#logic"       class="hover:text-[#0A192F] transition-colors">Logic</a>
         <a href="#graph"       class="hover:text-[#0A192F] transition-colors">Graph</a>
         <a href="#multiagent"  class="hover:text-[#0A192F] transition-colors">Multi-Agent</a>
+        <a href="#memory-rules" class="hover:text-[#0A192F] transition-colors">Memory Rules</a>
         <a href="#benchmarks"  class="hover:text-[#0A192F] transition-colors">Benchmarks</a>
         <a href="https://github.com/sachitrafa/YourMemory" target="_blank"
            class="flex items-center gap-1.5 hover:text-[#0A192F] transition-colors">
@@ -525,6 +526,174 @@
         </table>
         <p class="text-xs text-gray-400 mt-6 text-center">Keys hashed with SHA-256 before storage. Revoke anytime with <code class="bg-gray-100 px-1 py-0.5 rounded">revoke_agent(agent_id, user_id)</code>.</p>
       </div>
+    </div>
+  </section>
+
+  <!-- MEMORY RULES -->
+  <section id="memory-rules" class="border-t border-gray-200 bg-white py-24">
+    <div class="max-w-6xl mx-auto px-6">
+      <div class="text-center mb-16">
+        <h2 class="text-4xl font-bold tracking-tighter mb-3">Memory rules for your agent.</h2>
+        <p class="text-gray-500 max-w-xl mx-auto">Drop <a href="https://github.com/sachitrafa/YourMemory/blob/main/MEMORY_RULES.md" target="_blank" class="underline text-[#0A192F] hover:text-[#00D4FF] transition-colors">MEMORY_RULES.md</a> into your <code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded">CLAUDE.md</code> or system prompt to tell any agent exactly when and how to use memory.</p>
+      </div>
+
+      <!-- Workflow steps -->
+      <div class="grid md:grid-cols-3 gap-6 mb-12">
+        <div class="bg-gray-50 border border-gray-200 rounded-2xl p-7">
+          <div class="w-9 h-9 bg-[#0A192F] text-white rounded-xl flex items-center justify-center font-bold text-sm mb-5">1</div>
+          <h3 class="font-bold text-lg mb-2">Recall before acting</h3>
+          <p class="text-gray-500 text-sm leading-relaxed mb-4">At the start of every task, retrieve memories relevant to the request. Use the context to answer without asking the user to repeat themselves.</p>
+          <div class="bg-[#0A192F] rounded-xl p-4 font-mono text-xs text-gray-300">
+            recall_memory(<br/>
+            &nbsp;&nbsp;query=<span class="text-cyan-300">"auth token expiry"</span>,<br/>
+            &nbsp;&nbsp;user_id=<span class="text-cyan-300">"sachit"</span><br/>
+            )
+          </div>
+        </div>
+        <div class="bg-gray-50 border border-gray-200 rounded-2xl p-7">
+          <div class="w-9 h-9 bg-[#0A192F] text-white rounded-xl flex items-center justify-center font-bold text-sm mb-5">2</div>
+          <h3 class="font-bold text-lg mb-2">Decide what to store</h3>
+          <p class="text-gray-500 text-sm leading-relaxed mb-4">For every fact that surfaces, apply the store / update / ignore policy. Call the MCP tool immediately — do not batch or defer.</p>
+          <div class="bg-[#0A192F] rounded-xl p-4 font-mono text-xs text-gray-300">
+            <span class="text-gray-500"># new fact → store</span><br/>
+            store_memory(<br/>
+            &nbsp;&nbsp;content=<span class="text-cyan-300">"JWT expiry is 2h"</span>,<br/>
+            &nbsp;&nbsp;importance=<span class="text-yellow-300">0.8</span><br/>
+            )
+          </div>
+        </div>
+        <div class="bg-gray-50 border border-gray-200 rounded-2xl p-7">
+          <div class="w-9 h-9 bg-[#0A192F] text-white rounded-xl flex items-center justify-center font-bold text-sm mb-5">3</div>
+          <h3 class="font-bold text-lg mb-2">Update, don't duplicate</h3>
+          <p class="text-gray-500 text-sm leading-relaxed mb-4">If new info extends or contradicts an existing memory, merge it into one sentence and call <code class="text-xs bg-gray-800 text-gray-200 px-1 rounded">update_memory</code> with the recalled ID.</p>
+          <div class="bg-[#0A192F] rounded-xl p-4 font-mono text-xs text-gray-300">
+            <span class="text-gray-500"># stale fact → update</span><br/>
+            update_memory(<br/>
+            &nbsp;&nbsp;memory_id=<span class="text-yellow-300">42</span>,<br/>
+            &nbsp;&nbsp;new_content=<span class="text-cyan-300">"JWT now 4h"</span>,<br/>
+            &nbsp;&nbsp;importance=<span class="text-yellow-300">0.8</span><br/>
+            )
+          </div>
+        </div>
+      </div>
+
+      <!-- Decision table + Importance scale side by side -->
+      <div class="grid lg:grid-cols-2 gap-6 mb-6">
+
+        <!-- Decision table -->
+        <div class="bg-gray-50 border border-gray-200 rounded-2xl p-8">
+          <h3 class="font-bold text-lg mb-5">Store / update / ignore?</h3>
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="border-b border-gray-200">
+                <th class="text-left pb-3 text-gray-400 font-medium text-xs uppercase tracking-wide">Case</th>
+                <th class="text-left pb-3 text-gray-400 font-medium text-xs uppercase tracking-wide">Condition</th>
+                <th class="text-left pb-3 text-gray-400 font-medium text-xs uppercase tracking-wide">Action</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 text-sm">
+              <tr>
+                <td class="py-3 font-semibold text-[#0A192F]">New</td>
+                <td class="py-3 text-gray-500 text-xs">No existing memory covers it</td>
+                <td class="py-3"><code class="text-xs bg-cyan-50 text-cyan-700 px-2 py-0.5 rounded">store_memory</code></td>
+              </tr>
+              <tr>
+                <td class="py-3 font-semibold text-[#0A192F]">Extension</td>
+                <td class="py-3 text-gray-500 text-xs">Adds detail to a recalled memory</td>
+                <td class="py-3"><code class="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded">update_memory</code></td>
+              </tr>
+              <tr>
+                <td class="py-3 font-semibold text-[#0A192F]">Conflict</td>
+                <td class="py-3 text-gray-500 text-xs">Contradicts a recalled memory</td>
+                <td class="py-3"><code class="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded">update_memory</code></td>
+              </tr>
+              <tr>
+                <td class="py-3 font-semibold text-gray-400">Ignore</td>
+                <td class="py-3 text-gray-400 text-xs">Question, filler, no lasting value</td>
+                <td class="py-3 text-gray-400 text-xs">—</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="text-xs text-gray-400 mt-5 leading-relaxed">A fact has lasting value if it reveals a preference, constraint, architectural decision, failure mode, or strategy. Never store Claude's own responses.</p>
+        </div>
+
+        <!-- Importance scale -->
+        <div class="bg-gray-50 border border-gray-200 rounded-2xl p-8">
+          <h3 class="font-bold text-lg mb-5">Importance scale</h3>
+          <div class="space-y-4">
+            <div class="flex gap-4 items-start">
+              <span class="font-mono font-bold text-sm text-[#0A192F] shrink-0 w-16">0.9–1.0</span>
+              <div>
+                <p class="font-semibold text-sm">Core identity</p>
+                <p class="text-gray-500 text-xs mt-0.5">"User's name is Sachit" · "Project uses PostgreSQL" · permanent facts</p>
+              </div>
+            </div>
+            <div class="flex gap-4 items-start">
+              <span class="font-mono font-bold text-sm text-[#0A192F] shrink-0 w-16">0.7–0.8</span>
+              <div>
+                <p class="font-semibold text-sm">Strong preferences</p>
+                <p class="text-gray-500 text-xs mt-0.5">Recurring patterns · architectural decisions · "never add docstrings"</p>
+              </div>
+            </div>
+            <div class="flex gap-4 items-start">
+              <span class="font-mono font-bold text-sm text-[#0A192F] shrink-0 w-16">0.5</span>
+              <div>
+                <p class="font-semibold text-sm">Regular facts</p>
+                <p class="text-gray-500 text-xs mt-0.5">Project choices · "decided to use DuckDB for local dev"</p>
+              </div>
+            </div>
+            <div class="flex gap-4 items-start">
+              <span class="font-mono font-bold text-sm text-[#0A192F] shrink-0 w-16">0.2–0.3</span>
+              <div>
+                <p class="font-semibold text-sm">Transient context</p>
+                <p class="text-gray-500 text-xs mt-0.5">Session-specific notes · "currently debugging the webhook"</p>
+              </div>
+            </div>
+          </div>
+          <p class="text-xs text-gray-400 mt-6 pt-5 border-t border-gray-200">Importance is <span class="font-semibold text-gray-600">required</span> on every store and update call — the agent must decide it, never omit it.</p>
+        </div>
+      </div>
+
+      <!-- Category table -->
+      <div class="bg-gray-50 border border-gray-200 rounded-2xl p-8">
+        <h3 class="font-bold text-lg mb-2">Category controls decay rate</h3>
+        <p class="text-gray-500 text-sm mb-6">Pick the category that best matches the content. Ebbinghaus decay runs independently per category — failures fade fast, strategies persist longest.</p>
+        <div class="grid md:grid-cols-4 gap-4">
+          <div class="bg-white border border-gray-200 rounded-xl p-5">
+            <div class="flex items-center justify-between mb-3">
+              <code class="text-xs bg-gray-100 text-[#0A192F] px-2 py-1 rounded font-bold">fact</code>
+              <span class="text-xs text-gray-400 font-mono">~24 days</span>
+            </div>
+            <p class="text-gray-500 text-xs leading-relaxed">User preferences, identity, stable knowledge. Default category.</p>
+          </div>
+          <div class="bg-white border border-green-100 rounded-xl p-5">
+            <div class="flex items-center justify-between mb-3">
+              <code class="text-xs bg-green-50 text-green-700 px-2 py-1 rounded font-bold">strategy</code>
+              <span class="text-xs text-green-600 font-mono font-semibold">~38 days</span>
+            </div>
+            <p class="text-gray-500 text-xs leading-relaxed">Approaches that worked well. Decays slowest — keep good strategies longest.</p>
+          </div>
+          <div class="bg-white border border-gray-200 rounded-xl p-5">
+            <div class="flex items-center justify-between mb-3">
+              <code class="text-xs bg-yellow-50 text-yellow-700 px-2 py-1 rounded font-bold">assumption</code>
+              <span class="text-xs text-gray-400 font-mono">~19 days</span>
+            </div>
+            <p class="text-gray-500 text-xs leading-relaxed">Inferred beliefs, uncertain context. Fades before facts.</p>
+          </div>
+          <div class="bg-white border border-red-100 rounded-xl p-5">
+            <div class="flex items-center justify-between mb-3">
+              <code class="text-xs bg-red-50 text-red-700 px-2 py-1 rounded font-bold">failure</code>
+              <span class="text-xs text-red-500 font-mono font-semibold">~11 days</span>
+            </div>
+            <p class="text-gray-500 text-xs leading-relaxed">What went wrong. Stale errors fade fastest — no outdated noise.</p>
+          </div>
+        </div>
+        <div class="mt-6 pt-6 border-t border-gray-200 flex flex-wrap gap-6 text-xs text-gray-500">
+          <span><span class="font-semibold text-[#0A192F]">strategy example:</span> "Pagination with cursor solved the timeout on large DB queries"</span>
+          <span><span class="font-semibold text-[#0A192F]">failure example:</span> "OAuth failed for client X due to wrong redirect URI — fixed by adding /callback"</span>
+        </div>
+      </div>
+
     </div>
   </section>
 
