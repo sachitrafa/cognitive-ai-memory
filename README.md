@@ -1,14 +1,16 @@
 # YourMemory
 
-**59% Recall@5 on LoCoMo-10. Biologically-inspired memory decay for AI agents.**
+**MCP memory server for AI agents. Biological decay keeps context sharp. 59% Recall@5 on LoCoMo-10. Two commands to install.**
 
 Persistent memory for Claude and any MCP-compatible AI — works like human memory. Important things stick, forgotten things fade, outdated facts get pruned automatically. Related memories stay alive longer through a graph layer that understands connections between them.
 
-> Early stage — feedback and ideas welcome.
+![YourMemory Demo](demo.gif)
 
 ---
 
 ## Benchmarks
+
+Without persistent memory, your AI assistant asks the same questions every session — re-learning your stack, your preferences, your constraints from scratch. YourMemory fixes that with a hybrid BM25 + vector + knowledge graph pipeline that retrieves what matters, ranked by biological decay.
 
 **Dataset:** [snap-research/LoCoMo](https://github.com/snap-research/locomo) — `locomo10.json`, 10 multi-session conversation samples, **1,534 QA pairs**, categories 1–4.
 
