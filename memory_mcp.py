@@ -45,12 +45,33 @@ def _run_sse(port: int):
         ) as streams:
             await server.run(streams[0], streams[1], server.create_initialization_options())
 
+    from starlette.responses import HTMLResponse, JSONResponse
+    from src.routes.ui import _HTML
+
+    async def handle_ui(request: Request):
+        return HTMLResponse(content=_HTML)
+
+    async def handle_health(request: Request):
+        return JSONResponse({"status": "ok"})
+
+    async def handle_memories(request: Request):
+        from src.routes.memories import list_memories
+        user_id = request.query_params.get("userId", "")
+        limit   = int(request.query_params.get("limit", 500))
+        category = request.query_params.get("category") or None
+        result  = list_memories(userId=user_id, limit=limit, category=category)
+        return JSONResponse(result)
+
     app = Starlette(routes=[
-        Route("/sse", endpoint=handle_sse),
+        Route("/sse",       endpoint=handle_sse),
+        Route("/health",    endpoint=handle_health),
+        Route("/ui",        endpoint=handle_ui),
+        Route("/memories",  endpoint=handle_memories),
         Mount("/messages/", app=sse.handle_post_message),
     ])
 
     print(f"YourMemory MCP server running on http://0.0.0.0:{port}/sse", file=sys.stderr, flush=True)
+    print(f"Memory browser:          http://localhost:{port}/ui", file=sys.stderr, flush=True)
     uvicorn.run(app, host="0.0.0.0", port=port, log_level="warning")
 
 # Add project root so src.services imports work
@@ -620,7 +641,18 @@ def _write_mcp_config(path: str, mcp_entry: dict, client_name: str) -> bool:
                     data = _json.load(f)
                 except Exception:
                     data = {}
-        data.setdefault("mcpServers", {})["yourmemory"] = mcp_entry
+
+        # Strip empty-string env values — schema validators (Cline, Cursor, etc.)
+        # reject env entries with empty string values.
+        entry = dict(mcp_entry)
+        if "env" in entry:
+            clean_env = {k: v for k, v in entry["env"].items() if v}
+            if clean_env:
+                entry["env"] = clean_env
+            else:
+                del entry["env"]
+
+        data.setdefault("mcpServers", {})["yourmemory"] = entry
         with open(path, "w") as f:
             _json.dump(data, f, indent=2)
         print(f"  ✓  {client_name} → {path}")
@@ -640,7 +672,22 @@ def setup():
     import subprocess, shutil, json as _json
 
     exe = shutil.which("yourmemory") or sys.executable.replace("python", "yourmemory")
-    mcp_entry = {"command": exe}
+
+    if sys.platform == "win32":
+        # Windows: stdio pipes are unreliable — yourmemory defaults to SSE on port 3033.
+        # Clients connect via mcp-remote bridge. PYTHONIOENCODING is still set for
+        # any tools that spawn a subprocess on Windows.
+        sse_port  = int(os.getenv("PORT", 3033))
+        mcp_entry = {
+            "command": "npx",
+            "args":    ["-y", "mcp-remote", f"http://localhost:{sse_port}/sse"],
+            "env":     {"PYTHONIOENCODING": "utf-8"},
+        }
+    else:
+        mcp_entry = {
+            "command": exe,
+            "env":     {"PYTHONIOENCODING": "utf-8"},
+        }
 
     # ── 1. spaCy language model ─────────────────────────────────────────────
     print("\n[1/3] Downloading spaCy language model…")
@@ -729,6 +776,12 @@ def setup():
     for line in snippet.splitlines():
         print("  " + line)
 
+    if sys.platform == "win32":
+        sse_port = int(os.getenv("PORT", 3033))
+        print(f"\n  Windows note: YourMemory runs as an SSE server on port {sse_port}.")
+        print(f"  Start it once with:  yourmemory --sse")
+        print(f"  Or add it to Task Scheduler / startup to run automatically.")
+
     # ── 4. Inject memory rules into global agent instructions ───────────────
     print("\n[4/4] Injecting memory rules into global agent instructions…")
     _inject_memory_rules(home)
@@ -781,7 +834,7 @@ def run():
     migrate()
     _start_decay_scheduler()
 
-    # SSE mode: --sse flag or PORT env var
+    # SSE mode: --sse flag, PORT env var, or Windows default (stdio pipes unreliable on Windows)
     use_sse = "--sse" in sys.argv
     port    = int(os.getenv("PORT", 0))
     if not port and "--port" in sys.argv:
@@ -791,6 +844,9 @@ def run():
 
     if use_sse or port:
         _run_sse(port or 3000)
+    elif sys.platform == "win32" and "--stdio" not in sys.argv:
+        # Default to SSE on Windows — stdio pipes break intermittently on Windows
+        _run_sse(int(os.getenv("PORT", 3033)))
     else:
         asyncio.run(main())
 

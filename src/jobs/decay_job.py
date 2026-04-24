@@ -7,29 +7,14 @@ Manual usage:
 """
 
 import sys
-from datetime import datetime, timezone
-from dotenv import load_dotenv
 
 from src.services.decay import compute_strength
+from src.services.utils import parse_dt as _parse_dt
 from src.db.connection import get_backend, get_conn
 from src.graph.graph_store import chain_safe_to_prune
 from src.graph import get_graph_backend
 
-load_dotenv()
-
 PRUNE_THRESHOLD = 0.05  # memories weaker than this are deleted
-
-
-def _parse_dt(value) -> datetime:
-    if isinstance(value, str):
-        try:
-            dt = datetime.fromisoformat(value)
-        except ValueError:
-            return datetime.now(timezone.utc)
-        return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt
-    if isinstance(value, datetime):
-        return value.replace(tzinfo=timezone.utc) if value.tzinfo is None else value
-    return datetime.now(timezone.utc)
 
 
 def run():
@@ -91,8 +76,9 @@ def run():
                 pass
             updated += 1
 
-    conn.commit()
-    cur.close()
+    if backend != "duckdb":
+        conn.commit()
+        cur.close()
     conn.close()
 
     print(f"Decay job complete ({backend}) — updated: {updated}, pruned: {pruned}", file=sys.stderr)
