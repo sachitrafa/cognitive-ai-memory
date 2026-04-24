@@ -17,6 +17,12 @@ router = APIRouter()
 
 DEFAULT_IMPORTANCE = 0.5
 
+_TS = {
+    "postgres": "NOW()",
+    "duckdb":   "now()",
+    "sqlite":   "datetime('now')",
+}
+
 
 class MemoryRequest(BaseModel):
     userId: str
@@ -41,6 +47,15 @@ def _parse_dt(value) -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _exec(conn, cur, backend: str, sql_pg: str, sql_other: str, params):
+    if backend == "postgres":
+        cur.execute(sql_pg, params)
+    elif backend == "duckdb":
+        conn.execute(sql_other.replace("{TS}", _TS["duckdb"]), params)
+    else:
+        cur.execute(sql_other.replace("{TS}", _TS["sqlite"]), params)
+
+
 # ── POST /memories ─────────────────────────────────────────────────────────────
 
 @router.post("/memories")
@@ -63,16 +78,10 @@ def add_memory(req: MemoryRequest):
         existing      = resolution["existing"]
 
         if action == "reinforce":
-            if backend == "postgres":
-                cur.execute("""
-                    UPDATE memories SET recall_count = recall_count + 1, last_accessed_at = NOW()
-                    WHERE id = %s RETURNING id
-                """, (existing["id"],))
-            else:
-                cur.execute("""
-                    UPDATE memories SET recall_count = recall_count + 1, last_accessed_at = now()
-                    WHERE id = ?
-                """, (existing["id"],))
+            _exec(conn, cur, backend,
+                "UPDATE memories SET recall_count = recall_count + 1, last_accessed_at = NOW() WHERE id = %s RETURNING id",
+                "UPDATE memories SET recall_count = recall_count + 1, last_accessed_at = {TS} WHERE id = ?",
+                (existing["id"],) if backend != "duckdb" else [existing["id"]])
             memory_id = existing["id"]
             category  = existing["category"]
 
@@ -81,34 +90,18 @@ def add_memory(req: MemoryRequest):
             new_emb_str   = emb_to_db(new_embedding, backend)
             new_category  = categorize(final_content)
             try:
-                if backend == "postgres":
-                    cur.execute("""
-                        UPDATE memories
-                        SET content = %s, embedding = %s::vector, category = %s,
-                            recall_count = recall_count + 1, last_accessed_at = NOW()
-                        WHERE id = %s RETURNING id
-                    """, (final_content, new_emb_str, new_category, existing["id"]))
-                else:
-                    cur.execute("""
-                        UPDATE memories
-                        SET content = ?, embedding = ?, category = ?,
-                            recall_count = recall_count + 1, last_accessed_at = now()
-                        WHERE id = ?
-                    """, (final_content, new_emb_str, new_category, existing["id"]))
+                _exec(conn, cur, backend,
+                    "UPDATE memories SET content = %s, embedding = %s::vector, category = %s, recall_count = recall_count + 1, last_accessed_at = NOW() WHERE id = %s RETURNING id",
+                    "UPDATE memories SET content = ?, embedding = ?, category = ?, recall_count = recall_count + 1, last_accessed_at = {TS} WHERE id = ?",
+                    (final_content, new_emb_str, new_category, existing["id"]))
                 memory_id = existing["id"]
                 category  = new_category
             except Exception:
                 conn.rollback()
-                if backend == "postgres":
-                    cur.execute("""
-                        UPDATE memories SET recall_count = recall_count + 1, last_accessed_at = NOW()
-                        WHERE user_id = %s AND content = %s RETURNING id
-                    """, (req.userId, final_content))
-                else:
-                    cur.execute("""
-                        UPDATE memories SET recall_count = recall_count + 1, last_accessed_at = now()
-                        WHERE user_id = ? AND content = ?
-                    """, (req.userId, final_content))
+                _exec(conn, cur, backend,
+                    "UPDATE memories SET recall_count = recall_count + 1, last_accessed_at = NOW() WHERE user_id = %s AND content = %s RETURNING id",
+                    "UPDATE memories SET recall_count = recall_count + 1, last_accessed_at = {TS} WHERE user_id = ? AND content = ?",
+                    (req.userId, final_content))
                 memory_id = existing["id"]
                 category  = existing["category"]
 
@@ -124,12 +117,22 @@ def add_memory(req: MemoryRequest):
                 """, (req.userId, final_content, category, req.importance, emb_str))
                 row = cur.fetchone()
                 memory_id = row[0] if row else None
-            else:
-                cur.execute("""
+            elif backend == "duckdb":
+                conn.execute("""
                     INSERT INTO memories (user_id, content, category, importance, embedding)
                     VALUES (?, ?, ?, ?, ?)
                     ON CONFLICT (user_id, content) DO UPDATE
                         SET recall_count = recall_count + 1, last_accessed_at = now()
+                """, [req.userId, final_content, category, req.importance, emb_str])
+                result    = conn.execute("SELECT id FROM memories WHERE user_id = ? AND content = ?", [req.userId, final_content])
+                row       = result.fetchone()
+                memory_id = row[0] if row else None
+            else:  # sqlite
+                cur.execute("""
+                    INSERT INTO memories (user_id, content, category, importance, embedding)
+                    VALUES (?, ?, ?, ?, ?)
+                    ON CONFLICT (user_id, content) DO UPDATE
+                        SET recall_count = recall_count + 1, last_accessed_at = datetime('now')
                 """, (req.userId, final_content, category, req.importance, emb_str))
                 memory_id = cur.lastrowid
 
@@ -163,25 +166,26 @@ def update_memory(memory_id: int, req: UpdateMemoryRequest):
         if backend == "postgres":
             cur.execute("""
                 UPDATE memories
-                SET content          = %s,
-                    embedding        = %s::vector,
-                    category         = %s,
-                    importance       = %s,
-                    recall_count     = recall_count + 1,
-                    last_accessed_at = NOW()
+                SET content = %s, embedding = %s::vector, category = %s, importance = %s,
+                    recall_count = recall_count + 1, last_accessed_at = NOW()
                 WHERE id = %s
                 RETURNING id, content, category, importance
             """, (req.content, emb_str, category, req.importance, memory_id))
             row = cur.fetchone()
-        else:
+        elif backend == "duckdb":
+            conn.execute("""
+                UPDATE memories
+                SET content = ?, embedding = ?, category = ?, importance = ?,
+                    recall_count = recall_count + 1, last_accessed_at = now()
+                WHERE id = ?
+            """, [req.content, emb_str, category, req.importance, memory_id])
+            result = conn.execute("SELECT id, content, category, importance FROM memories WHERE id = ?", [memory_id])
+            row    = result.fetchone()
+        else:  # sqlite
             cur.execute("""
                 UPDATE memories
-                SET content          = ?,
-                    embedding        = ?,
-                    category         = ?,
-                    importance       = ?,
-                    recall_count     = recall_count + 1,
-                    last_accessed_at = now()
+                SET content = ?, embedding = ?, category = ?, importance = ?,
+                    recall_count = recall_count + 1, last_accessed_at = datetime('now')
                 WHERE id = ?
             """, (req.content, emb_str, category, req.importance, memory_id))
             cur.execute("SELECT id, content, category, importance FROM memories WHERE id = ?", (memory_id,))
@@ -211,32 +215,33 @@ def list_memories(
     conn    = get_conn()
     cur     = conn.cursor()
 
-    if backend == "postgres":
-        from psycopg2.extras import RealDictCursor
+    try:
+        if backend == "postgres":
+            from psycopg2.extras import RealDictCursor
+            cur.close()
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+            sql    = "SELECT id, content, category, importance, recall_count, last_accessed_at, created_at FROM memories WHERE user_id = %s"
+            params = [userId]
+            if category:
+                sql += " AND category = %s"
+                params.append(category)
+            sql += " ORDER BY last_accessed_at DESC LIMIT %s"
+            params.append(limit)
+            cur.execute(sql, params)
+            rows = [dict(r) for r in cur.fetchall()]
+        else:
+            sql    = "SELECT id, content, category, importance, recall_count, last_accessed_at, created_at FROM memories WHERE user_id = ?"
+            params = [userId]
+            if category:
+                sql += " AND category = ?"
+                params.append(category)
+            sql += " ORDER BY last_accessed_at DESC LIMIT ?"
+            params.append(limit)
+            result = conn.execute(sql, params)
+            rows   = duckdb_rows(result)
+    finally:
         cur.close()
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        sql    = "SELECT id, content, category, importance, recall_count, last_accessed_at, created_at FROM memories WHERE user_id = %s"
-        params = [userId]
-        if category:
-            sql += " AND category = %s"
-            params.append(category)
-        sql += " ORDER BY last_accessed_at DESC LIMIT %s"
-        params.append(limit)
-        cur.execute(sql, params)
-        rows = [dict(r) for r in cur.fetchall()]
-    else:
-        sql    = "SELECT id, content, category, importance, recall_count, last_accessed_at, created_at FROM memories WHERE user_id = ?"
-        params = [userId]
-        if category:
-            sql += " AND category = ?"
-            params.append(category)
-        sql += " ORDER BY last_accessed_at DESC LIMIT ?"
-        params.append(limit)
-        result = conn.execute(sql, params)
-        rows   = duckdb_rows(result)
-
-    cur.close()
-    conn.close()
+        conn.close()
 
     memories = []
     for m in rows:

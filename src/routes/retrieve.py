@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from src.services.retrieve import retrieve
 
@@ -9,7 +9,7 @@ router = APIRouter()
 class RetrieveRequest(BaseModel):
     userId: str
     query: str
-    topK: int = 5
+    topK: int = Field(5, ge=1, le=500)
 
 
 @router.post("/retrieve")
