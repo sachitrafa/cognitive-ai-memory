@@ -189,9 +189,37 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 
 Restart Claude Desktop.
 
+#### OpenCode
+
+Add to `~/.config/opencode/config.json`:
+
+```json
+{
+  "mcp": {
+    "yourmemory": {
+      "type": "local",
+      "command": ["yourmemory"],
+      "environment": {
+        "YOURMEMORY_USER": "your_name"
+      }
+    }
+  }
+}
+```
+
+Run `yourmemory-path` in your terminal first if `yourmemory` isn't on your PATH — replace `"yourmemory"` with the full path it prints.
+
+Then add the memory workflow to your OpenCode instructions:
+
+```bash
+cp sample_CLAUDE.md ~/.config/opencode/instructions.md
+```
+
+Restart OpenCode after saving.
+
 #### Any MCP-compatible client
 
-YourMemory is a standard stdio MCP server. Works with Claude Code, Claude Desktop, Cline, Cursor, Windsurf, Continue, and Zed. Use the full path from `yourmemory-path` if the client doesn't inherit shell PATH.
+YourMemory is a standard stdio MCP server. Works with Claude Code, Claude Desktop, Cline, Cursor, OpenCode, Windsurf, Continue, and Zed. Use the full path from `yourmemory-path` if the client doesn't inherit shell PATH.
 
 ### 5. Add memory instructions to your project
 
