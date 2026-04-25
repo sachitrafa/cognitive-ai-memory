@@ -1,5 +1,10 @@
 # YourMemory
 
+[![Docker Publish](https://img.shields.io/github/actions/workflow/status/sachitrafa/YourMemory/docker-publish.yml?branch=main&label=docker%20build&logo=docker)](https://github.com/sachitrafa/YourMemory/actions/workflows/docker-publish.yml)
+[![Version](https://img.shields.io/badge/version-1.4.1-blue)](https://github.com/sachitrafa/YourMemory/releases)
+[![License: CC BY-NC 4.0](https://img.shields.io/badge/license-CC%20BY--NC%204.0-lightgrey)](https://creativecommons.org/licenses/by-nc/4.0/)
+[![Recall@5](https://img.shields.io/badge/Recall%405-59%25-brightgreen)](BENCHMARKS.md)
+
 **MCP memory server for AI agents. Biological decay keeps context sharp. 59% Recall@5 on LoCoMo-10. Two commands to install.**
 
 Persistent memory for Claude and any MCP-compatible AI — works like human memory. Important things stick, forgotten things fade, outdated facts get pruned automatically. Related memories stay alive longer through a graph layer that understands connections between them.
