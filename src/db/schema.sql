@@ -36,6 +36,19 @@ END $$;
 CREATE INDEX IF NOT EXISTS memories_user_id_idx ON memories (user_id);
 CREATE INDEX IF NOT EXISTS memories_agent_id_idx ON memories (agent_id);
 
+-- tsvector column for BM25-style full-text search
+DO $$ BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name='memories' AND column_name='content_tsv'
+    ) THEN
+        ALTER TABLE memories ADD COLUMN content_tsv tsvector
+            GENERATED ALWAYS AS (to_tsvector('english', content)) STORED;
+    END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS memories_fts_idx ON memories USING GIN (content_tsv);
+
 -- Agent registrations — API key auth for multi-agent systems
 CREATE TABLE IF NOT EXISTS agent_registrations (
     id          SERIAL PRIMARY KEY,

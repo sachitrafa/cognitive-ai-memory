@@ -36,6 +36,23 @@ def migrate():
         conn.commit()
         cur.close()
 
+    # ── Post-schema FTS setup ─────────────────────────────────────────────
+    if backend == "sqlite":
+        # Backfill any rows that existed before the FTS table was created.
+        # The INSERT OR IGNORE prevents double-indexing on a fresh DB.
+        conn.executescript("""
+            INSERT OR IGNORE INTO memories_fts(rowid, content)
+            SELECT id, content FROM memories;
+        """)
+
+    elif backend == "duckdb":
+        # Install the FTS extension once (no-op if already installed).
+        try:
+            conn.execute("INSTALL fts; LOAD fts;")
+        except Exception as exc:
+            print(f"DuckDB FTS extension unavailable — keyword search disabled: {exc}",
+                  file=sys.stderr)
+
     conn.close()
     print(f"Migration complete ({backend}).", file=sys.stderr)
 

@@ -20,6 +20,27 @@ CREATE TABLE IF NOT EXISTS memories (
 CREATE INDEX IF NOT EXISTS memories_user_id_idx ON memories (user_id);
 CREATE INDEX IF NOT EXISTS memories_agent_id_idx ON memories (agent_id);
 
+-- FTS5 virtual table for BM25 keyword search (content= keeps it in sync with memories)
+CREATE VIRTUAL TABLE IF NOT EXISTS memories_fts USING fts5(
+    content,
+    content='memories',
+    content_rowid='id'
+);
+
+-- Triggers to keep the FTS index in sync with the memories table
+CREATE TRIGGER IF NOT EXISTS memories_fts_insert AFTER INSERT ON memories BEGIN
+    INSERT INTO memories_fts(rowid, content) VALUES (new.id, new.content);
+END;
+
+CREATE TRIGGER IF NOT EXISTS memories_fts_delete AFTER DELETE ON memories BEGIN
+    INSERT INTO memories_fts(memories_fts, rowid, content) VALUES ('delete', old.id, old.content);
+END;
+
+CREATE TRIGGER IF NOT EXISTS memories_fts_update AFTER UPDATE ON memories BEGIN
+    INSERT INTO memories_fts(memories_fts, rowid, content) VALUES ('delete', old.id, old.content);
+    INSERT INTO memories_fts(rowid, content) VALUES (new.id, new.content);
+END;
+
 -- Agent registrations — API key auth for multi-agent systems
 -- can_read / can_write stored as JSON arrays (TEXT) instead of Postgres TEXT[]
 CREATE TABLE IF NOT EXISTS agent_registrations (

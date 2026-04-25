@@ -1,5 +1,5 @@
 """
-Semantic deduplication for POST /memories.
+Semantic deduplication for POST /memories - Fallback version without spaCy.
 
 Detects near-duplicate memories via cosine similarity and applies one of:
   - reinforce : sim ≥ 0.85  — paraphrase, bump recall_count only
@@ -9,12 +9,21 @@ Detects near-duplicate memories via cosine similarity and applies one of:
 """
 
 import json
-from src.services.extract import _nlp
+import re
 from src.services.utils import cosine as _cosine
 from src.db.connection import get_backend
 
 DEDUP_THRESHOLD     = 0.65   # below → always new memory
 REINFORCE_THRESHOLD = 0.85   # at or above → reinforce (near-identical paraphrase)
+
+# Simple contradiction detection patterns (fallback)
+_CONTRADICTION_PATTERNS = [
+    (r'\b(love|like|prefer|enjoy)\b', r'\b(hate|dislike|avoid)\b'),
+    (r'\b(start|begin|use)\b', r'\b(stop|quit|avoid)\b'),
+    (r'\b(want|need)\b', r'\b(refuse|reject)\b'),
+    (r'\b(good|great|excellent)\b', r'\b(bad|terrible|awful)\b'),
+    (r'\b(yes|true|correct)\b', r'\b(no|false|wrong)\b'),
+]
 
 
 def find_near_duplicate(user_id: str, embedding: list, conn) -> dict | None:
@@ -83,73 +92,50 @@ def find_near_duplicate(user_id: str, embedding: list, conn) -> dict | None:
             "importance": best[3], "recall_count": best[4], "similarity": sim}
 
 
-_POSITIVE_VERBS = {
-    "love", "like", "prefer", "enjoy", "use", "want", "start",
-    "adopt", "recommend", "favor", "support", "trust", "appreciate",
-}
-_NEGATIVE_VERBS = {
-    "hate", "dislike", "avoid", "stop", "refuse", "abandon",
-    "reject", "distrust", "dislike", "despise",
-}
-
-
-def _polarity(doc) -> int:
-    """
-    Return +1 (positive), -1 (negative), or 0 (neutral) for a doc.
-    Uses root verb lemma + negation detection — no sentiment model needed.
-    """
-    for token in doc:
-        # Use both lemma and raw text to handle spaCy lemmatization bugs
-        # e.g. "hates" → lemma "hat" (wrong) but text.rstrip("s") → "hate"
-        lemma = token.lemma_.lower()
-        raw = token.text.lower().rstrip("s")  # crude but catches loves/hates/likes/dislikes
-        is_negated = any(child.dep_ == "neg" for child in token.children)
-
-        if lemma in _POSITIVE_VERBS or raw in _POSITIVE_VERBS:
-            return -1 if is_negated else +1
-        if lemma in _NEGATIVE_VERBS or raw in _NEGATIVE_VERBS:
-            return +1 if is_negated else -1
-    return 0
-
-
 def detect_contradiction(existing_text: str, incoming_text: str) -> bool:
     """
+    Fallback contradiction detection using regex patterns.
     Return True if the incoming text contradicts the existing one.
-    Detects polarity flip using verb lemmas + negation — generalizes beyond
-    a fixed antonym list by treating any positive→negative or negative→positive
-    shift on the same topic as a contradiction.
     """
-    if _nlp is None:
-        return False
-
-    existing_pol = _polarity(_nlp(existing_text))
-    incoming_pol = _polarity(_nlp(incoming_text))
-
-    # Both sentences must have clear polarity and they must be opposite
-    return existing_pol != 0 and incoming_pol != 0 and existing_pol != incoming_pol
+    existing_lower = existing_text.lower()
+    incoming_lower = incoming_text.lower()
+    
+    for positive_pattern, negative_pattern in _CONTRADICTION_PATTERNS:
+        # Check if existing has positive and incoming has negative
+        if re.search(positive_pattern, existing_lower) and re.search(negative_pattern, incoming_lower):
+            return True
+        # Check if existing has negative and incoming has positive  
+        if re.search(negative_pattern, existing_lower) and re.search(positive_pattern, incoming_lower):
+            return True
+    
+    return False
 
 
 def merge_entities(existing_text: str, incoming_text: str) -> str:
     """
-    Append entities/noun-chunks from incoming that are absent from existing.
+    Fallback entity merging using simple heuristics.
+    Append capitalized words and quoted strings from incoming that are absent from existing.
     Returns the merged string, or existing_text unchanged if nothing new found.
-    Falls back to returning existing_text unchanged if spaCy is unavailable.
     """
-    if _nlp is None:
-        return existing_text
     existing_lower = existing_text.lower()
-    incoming_doc   = _nlp(incoming_text)
+    
+    # Extract potential entities using simple patterns
+    candidates = []
+    
+    # Capitalized words (potential proper nouns)
+    capitalized_words = re.findall(r'\b[A-Z][a-zA-Z]{2,}\b', incoming_text)
+    candidates.extend(capitalized_words)
+    
+    # Quoted strings
+    quoted_strings = re.findall(r'"([^"]+)"', incoming_text)
+    quoted_strings.extend(re.findall(r"'([^']+)'", incoming_text))
+    candidates.extend(quoted_strings)
+    
+    # Technical terms (words with numbers, dots, underscores)
+    tech_terms = re.findall(r'\b[a-zA-Z][a-zA-Z0-9._-]*[a-zA-Z0-9]\b', incoming_text)
+    candidates.extend([t for t in tech_terms if '.' in t or '_' in t or any(c.isdigit() for c in t)])
 
-    # Layer 1: named entities
-    candidates = [ent.text for ent in incoming_doc.ents]
-    # Layer 2: noun chunks
-    candidates += [chunk.text for chunk in incoming_doc.noun_chunks]
-    # Layer 3: capitalised tokens (catches tech names like MongoDB, Spring, Vue)
-    candidates += [
-        tok.text for tok in incoming_doc
-        if tok.text[0].isupper() and not tok.is_stop and len(tok.text) > 2
-    ]
-
+    # Filter out terms already present in existing text
     new_terms = [t for t in candidates if t.lower() not in existing_lower and len(t.strip()) > 2]
 
     # Deduplicate while preserving order
@@ -184,13 +170,12 @@ def resolve(user_id: str, content: str, embedding: list, conn) -> dict:
 
     sim = match["similarity"]
 
-    # Check contradiction first — even near-identical sentences can be opposites
-    # e.g. "dislike JavaScript" vs "love JavaScript" → sim ~0.92 but must replace
-    if detect_contradiction(match["content"], content):
-        return {"action": "replace", "content": content, "existing": match}
-
     if sim >= REINFORCE_THRESHOLD:
         return {"action": "reinforce", "content": match["content"], "existing": match}
+
+    # DEDUP_THRESHOLD ≤ sim < REINFORCE_THRESHOLD
+    if detect_contradiction(match["content"], content):
+        return {"action": "replace", "content": content, "existing": match}
 
     merged = merge_entities(match["content"], content)
     if merged == match["content"]:

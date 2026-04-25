@@ -69,6 +69,7 @@ def register_agent(
             RETURNING id
         """, (agent_id, user_id, key_hash, can_read, can_write, description))
     else:
+        # DuckDB and SQLite both use ? placeholders and JSON-encoded arrays
         cur.execute("""
             INSERT INTO agent_registrations (agent_id, user_id, api_key_hash, can_read, can_write, description)
             VALUES (?, ?, ?, ?, ?, ?)
@@ -149,7 +150,7 @@ def revoke_agent(agent_id: str, user_id: str) -> bool:
         row = cur.fetchone()
         if row:
             cur.execute("""
-                UPDATE agent_registrations SET revoked_at = datetime('now')
+                UPDATE agent_registrations SET revoked_at = CURRENT_TIMESTAMP
                 WHERE agent_id = ? AND user_id = ?
             """, (agent_id, user_id))
 
