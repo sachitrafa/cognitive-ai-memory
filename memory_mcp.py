@@ -245,7 +245,7 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
     emb_to_db        = _services["emb_to_db"]
 
     if name == "recall_memory":
-        user_id = arguments.get("user_id", DEFAULT_USER)
+        user_id = arguments.get("user_id", DEFAULT_USER).strip().lower()
         query   = arguments["query"]
         top_k   = arguments.get("top_k", 5)
         api_key = arguments.get("api_key")
@@ -272,7 +272,7 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
         return [types.TextContent(type="text", text=json.dumps(result, default=str))]
 
     elif name == "store_memory":
-        user_id = arguments.get("user_id", DEFAULT_USER)
+        user_id = arguments.get("user_id", DEFAULT_USER).strip().lower()
         api_key = arguments.get("api_key")
 
         if api_key:
@@ -857,13 +857,13 @@ def setup():
 
     # Resolve user_id: env var → saved file → prompt
     uid_path = os.path.join(home, ".yourmemory", "user_id")
-    user_id = os.getenv("YOURMEMORY_USER", "").strip()
+    user_id = os.getenv("YOURMEMORY_USER", "").strip().lower()
     if not user_id and os.path.exists(uid_path):
         with open(uid_path) as f:
-            user_id = f.read().strip()
+            user_id = f.read().strip().lower()
     if not user_id:
         try:
-            user_id = input("  Your name (used as memory user_id, e.g. 'alice'): ").strip()
+            user_id = input("  Your name (used as memory user_id, e.g. 'alice'): ").strip().lower()
         except (EOFError, OSError):
             user_id = ""
     if not user_id:

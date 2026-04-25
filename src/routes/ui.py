@@ -118,8 +118,9 @@ _HTML = """<!DOCTYPE html>
   }
 
   async function load() {
-    const uid = document.getElementById('userInput').value.trim();
+    const uid = document.getElementById('userInput').value.trim().toLowerCase();
     if (!uid) return;
+    document.getElementById('userInput').value = uid;
 
     document.getElementById('loading').classList.remove('hidden');
     document.getElementById('grid').innerHTML = '';
