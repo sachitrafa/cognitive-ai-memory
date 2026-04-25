@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "yourmemory"
-version = "1.4.2"
+version = "1.4.3"
 description = "Persistent memory for Claude — Ebbinghaus forgetting curve, semantic deduplication, MCP-native"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -30,11 +30,13 @@ dependencies = [
     "apscheduler",
     "spacy>=3.8.13,<4.0",
     "networkx>=3.0",
+    "fastapi",
+    "uvicorn[standard]",
 ]
 
 [project.optional-dependencies]
 postgres = ["psycopg2-binary", "pgvector"]
-sse = ["fastapi", "uvicorn[standard]", "httpx"]
+sse = ["httpx"]
 neo4j = ["neo4j>=5.0"]
 all = ["yourmemory[postgres,sse,neo4j]"]
 

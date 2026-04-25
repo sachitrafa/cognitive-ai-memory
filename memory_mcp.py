@@ -555,6 +555,32 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
         return [types.TextContent(type="text", text=json.dumps({"error": f"Unknown tool: {name}"}))]
 
 
+def _start_dashboard(port: int) -> None:
+    """Start the memory dashboard HTTP server in a background daemon thread.
+
+    Binds to 127.0.0.1 only — local access, not exposed to the network.
+    Prints the URL to stderr so it doesn't pollute the MCP stdio stream.
+    """
+    try:
+        import uvicorn
+        from src.app import app as dashboard_app
+
+        config = uvicorn.Config(
+            dashboard_app,
+            host="127.0.0.1",
+            port=port,
+            log_level="error",
+            access_log=False,
+        )
+        server = uvicorn.Server(config)
+
+        t = threading.Thread(target=server.run, daemon=True, name="dashboard")
+        t.start()
+        print(f"  Dashboard → http://127.0.0.1:{port}/ui", file=sys.stderr)
+    except Exception as exc:
+        print(f"  Dashboard unavailable: {exc}", file=sys.stderr)
+
+
 def _start_decay_scheduler():
     """Run the decay job once immediately, then every 24 hours in a background thread."""
     from src.jobs.decay_job import run as run_decay
@@ -892,6 +918,8 @@ def run():
         # Default to SSE on Windows — stdio pipes break intermittently on Windows
         _run_sse(int(os.getenv("PORT", 3033)))
     else:
+        dashboard_port = int(os.getenv("YOURMEMORY_DASHBOARD_PORT", 3033))
+        _start_dashboard(dashboard_port)
         asyncio.run(main())
 
 
