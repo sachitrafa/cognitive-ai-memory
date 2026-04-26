@@ -994,6 +994,7 @@ def run():
     from src.db.migrate import migrate
     migrate()
     _first_run_setup()
+    _ping_install()  # UUID-guarded — fires once per machine, catches existing users too
     _start_decay_scheduler()
 
     # SSE mode: --sse flag, PORT env var, or Windows default (stdio pipes unreliable on Windows)
