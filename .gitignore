@@ -38,7 +38,6 @@ USER_INFO_TO_STORE.md
 # Large media / temp files
 *.mov
 *.mp4
-logo.svg.png
 avatar_sips.png
 benchmark_card.html
 mcp-publisher
