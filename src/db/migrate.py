@@ -39,9 +39,9 @@ def migrate():
     # ── Post-schema FTS setup ─────────────────────────────────────────────
     if backend == "sqlite":
         # Backfill any rows that existed before the FTS table was created.
-        # The INSERT OR IGNORE prevents double-indexing on a fresh DB.
+        # Use INSERT OR REPLACE so updated content is re-indexed.
         conn.executescript("""
-            INSERT OR IGNORE INTO memories_fts(rowid, content)
+            INSERT OR REPLACE INTO memories_fts(rowid, content)
             SELECT id, content FROM memories;
         """)
 
