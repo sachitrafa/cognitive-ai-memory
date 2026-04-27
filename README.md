@@ -1,13 +1,18 @@
 <div align="center">
 
+<img src="logo.svg.png" alt="YourMemory Logo" width="80"/>
+
 # YourMemory
 
 **Persistent memory for AI agents — built on the science of how humans remember.**
 
-[![Docker Publish](https://img.shields.io/github/actions/workflow/status/sachitrafa/YourMemory/docker-publish.yml?branch=main&label=docker%20build&logo=docker)](https://github.com/sachitrafa/YourMemory/actions/workflows/docker-publish.yml)
-[![Version](https://img.shields.io/badge/version-1.4.1-blue)](https://github.com/sachitrafa/YourMemory/releases)
+[![PyPI](https://img.shields.io/pypi/v/yourmemory?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/yourmemory/)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/yourmemory?color=brightgreen)](https://pypi.org/project/yourmemory/)
 [![License: CC BY-NC 4.0](https://img.shields.io/badge/license-CC%20BY--NC%204.0-lightgrey)](https://creativecommons.org/licenses/by-nc/4.0/)
 [![Recall@5](https://img.shields.io/badge/Recall%405-59%25-brightgreen)](BENCHMARKS.md)
+[![Docker Build](https://img.shields.io/github/actions/workflow/status/sachitrafa/YourMemory/docker-publish.yml?branch=main&label=docker&logo=docker)](https://github.com/sachitrafa/YourMemory/actions/workflows/docker-publish.yml)
+
+<img src="og-image.png" alt="YourMemory — 59% Recall@5 vs 28% Zep Cloud" width="720"/>
 
 </div>
 
@@ -17,7 +22,7 @@
 
 Every session, your AI assistant starts from zero. It asks the same questions, forgets your preferences, re-learns your stack. There is no memory between conversations.
 
-**YourMemory fixes that.** It gives AI agents a persistent memory layer that works the way human memory does — important things stick, forgotten things fade, outdated facts get replaced automatically. Two commands to install, zero infrastructure required.
+**YourMemory fixes that.** It gives AI agents a persistent memory layer that works the way human memory does — important things stick, forgotten things fade, outdated facts get replaced automatically. One command to install, zero infrastructure required. Memory starts working the moment you add it to your AI client.
 
 ---
 
@@ -32,19 +37,13 @@ Tested on [LoCoMo-10](https://github.com/snap-research/locomo) — 1,534 QA pair
 
 > **2× better recall than Zep Cloud on the same benchmark.**
 
-Full methodology and per-sample breakdown in [BENCHMARKS.md](BENCHMARKS.md). Writeup: [I built memory decay for AI agents using the Ebbinghaus forgetting curve](https://dev.to/sachit_mishra_686a94d1bb5/i-built-memory-decay-for-ai-agents-using-the-ebbinghaus-forgetting-curve-1b0e).
-
----
-
-## Demo
-
-![YourMemory Demo](demo.gif)
+Full methodology in [BENCHMARKS.md](BENCHMARKS.md). Writeup: [I built memory decay for AI agents using the Ebbinghaus forgetting curve](https://dev.to/sachit_mishra_686a94d1bb5/i-built-memory-decay-for-ai-agents-using-the-ebbinghaus-forgetting-curve-1b0e).
 
 ---
 
 ## Quick Start
 
-**Supports Python 3.11, 3.12, 3.13, and 3.14. No Docker, no database setup, no external services.**
+**Supports Python 3.11–3.14. No Docker, no database setup, no external services.**
 
 ### Step 1 — Install
 
@@ -52,15 +51,7 @@ Full methodology and per-sample breakdown in [BENCHMARKS.md](BENCHMARKS.md). Wri
 pip install yourmemory
 ```
 
-### Step 2 — Run setup (once)
-
-```bash
-yourmemory-setup
-```
-
-Downloads the spaCy language model and initialises the local database at `~/.yourmemory/memories.duckdb`.
-
-### Step 3 — Get your config path
+### Step 2 — Get your config path
 
 ```bash
 yourmemory-path
@@ -68,7 +59,7 @@ yourmemory-path
 
 Prints your full executable path and a ready-to-paste config block. Copy it.
 
-### Step 4 — Wire into your AI client
+### Step 3 — Wire into your AI client
 
 <details>
 <summary><strong>Claude Code</strong></summary>
@@ -151,47 +142,61 @@ Add to `~/.cursor/mcp.json`:
 </details>
 
 <details>
-<summary><strong>OpenCode</strong></summary>
+<summary><strong>Windsurf / OpenCode / any MCP client</strong></summary>
 
-Add to `~/.config/opencode/config.json`:
+YourMemory is a standard stdio MCP server. Use the full path from `yourmemory-path` if the client doesn't inherit shell PATH.
 
 ```json
 {
-  "mcp": {
+  "mcpServers": {
     "yourmemory": {
-      "type": "local",
-      "command": ["yourmemory"],
-      "environment": { "YOURMEMORY_USER": "your_name" }
+      "command": "/full/path/to/yourmemory",
+      "env": { "YOURMEMORY_USER": "your_name" }
     }
   }
 }
 ```
 
-Then copy the memory workflow instructions:
-
-```bash
-cp sample_CLAUDE.md ~/.config/opencode/instructions.md
-```
-
-Restart OpenCode.
-
 </details>
 
-> **Any MCP-compatible client:** YourMemory is a standard stdio MCP server. Works with Windsurf, Continue, Zed, and any client that supports MCP. Use the full path from `yourmemory-path` if the client doesn't inherit shell PATH.
+> **First start is automatic.** On the first run, YourMemory initialises your database, downloads the language model, and injects memory workflow instructions into your AI client config — no manual setup needed.
 
-### Step 5 — Add memory instructions to your project
+### Step 4 — Start remembering
 
-```bash
-cp sample_CLAUDE.md CLAUDE.md
+That's it. On the first MCP start, YourMemory automatically:
+- Initialises your local database at `~/.yourmemory/memories.duckdb`
+- Downloads the spaCy language model in the background
+- Injects the memory workflow rules into your AI client
+
+Your AI now recalls what it learned in previous sessions, without you telling it to.
+
+---
+
+## Memory Dashboard
+
+Every YourMemory instance ships with a built-in browser UI. When the MCP server is running, open:
+
+```
+http://localhost:3033/ui
 ```
 
-Edit `CLAUDE.md` — replace `YOUR_NAME` and `YOUR_USER_ID`. Claude now follows the recall → store → update workflow automatically on every task.
+Browse your memories by agent, filter by category, sort by strength, and see which memories are fading.
+
+<details>
+<summary><strong>What you'll see</strong></summary>
+
+- **Strength bars** — how close each memory is to being pruned
+- **Agent tabs** — switch between All / User / per-agent views
+- **Category badges** — fact · strategy · assumption · failure
+- **Stats** — total, strong (≥ 50%), fading (5–50%), near prune (< 10%)
+
+</details>
 
 ---
 
 ## MCP Tools
 
-Three tools. Called by Claude automatically once `CLAUDE.md` is in place.
+Three tools, called by your AI automatically.
 
 | Tool | When | What it does |
 |------|------|--------------|
@@ -223,21 +228,21 @@ recall_memory("Python formatting")
 
 ### Ebbinghaus Forgetting Curve
 
-Memory strength decays exponentially — but importance and recall frequency slow that decay:
+Memory strength decays exponentially — importance and recall frequency slow that decay:
 
 ```
 effective_λ = base_λ × (1 - importance × 0.8)
-strength    = importance × e^(−effective_λ × days) × (1 + recall_count × 0.2)
+strength    = clamp(importance × e^(−effective_λ × days) × (1 + recall_count × 0.2), 0, 1)
 score       = cosine_similarity × strength
 ```
 
 Memories recalled frequently resist decay. Memories below strength `0.05` are pruned automatically every 24 hours.
 
-### Hybrid Retrieval: Vector + Graph
+### Hybrid Retrieval: Vector + BM25 + Graph
 
 Retrieval runs in two rounds to surface related context that vocabulary-based search misses:
 
-**Round 1 — Vector search:** cosine similarity against all memories, returns top-k above threshold.
+**Round 1 — Hybrid search:** cosine similarity + BM25 keyword scoring, returns top-k above threshold.
 
 **Round 2 — Graph expansion:** BFS traversal from Round 1 seeds surfaces memories that share context but not vocabulary — connected via semantic edges (cosine similarity ≥ 0.4).
 
@@ -351,6 +356,12 @@ Claude / Cline / Cursor / Any MCP client
     ├── visibility VARCHAR        Neo4j (opt-in)
     └── agent_id VARCHAR            └── bolt://localhost:7687
 ```
+
+---
+
+## Contributing
+
+PRs are welcome. See [CONTRIBUTORS.md](CONTRIBUTORS.md) for the people who have already improved YourMemory.
 
 ---
 
