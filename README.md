@@ -1,7 +1,5 @@
 <div align="center">
 
-<img src="logo.svg.png" alt="YourMemory Logo" width="80"/>
-
 # YourMemory
 
 **Persistent memory for AI agents — built on the science of how humans remember.**
