@@ -109,12 +109,12 @@ def _similar_nodes(
     Query the vector DB for the top-k most similar existing memories
     (excluding memory_id itself).  Returns [{memory_id, similarity}].
     """
-    try:
-        from src.db.connection import get_backend, get_conn
-        from src.db.connection import duckdb_rows
-        backend = get_backend()
-        conn    = get_conn()
+    from src.db.connection import get_backend, get_conn
+    from src.db.connection import duckdb_rows
+    backend = get_backend()
+    conn    = get_conn()
 
+    try:
         if backend == "duckdb":
             result = conn.execute("""
                 SELECT id,
@@ -126,7 +126,6 @@ def _similar_nodes(
                 LIMIT ?
             """, [embedding, user_id, memory_id, embedding, min_sim, top_k])
             rows = duckdb_rows(result)
-            conn.close()
             return [{"memory_id": r["id"], "similarity": r["sim"]} for r in rows]
 
         elif backend == "postgres":
@@ -143,7 +142,6 @@ def _similar_nodes(
             """, (emb_str, user_id, memory_id, emb_str, min_sim, top_k))
             rows = cur.fetchall()
             cur.close()
-            conn.close()
             return [{"memory_id": r[0], "similarity": r[1]} for r in rows]
 
         else:  # sqlite — compute cosine in Python
@@ -166,12 +164,12 @@ def _similar_nodes(
                     results.append({"memory_id": row[0], "similarity": sim})
             results.sort(key=lambda x: x["similarity"], reverse=True)
             cur.close()
-            conn.close()
             return results[:top_k]
-
     except Exception as exc:
         print(f"[graph_store] _similar_nodes failed: {exc}", file=sys.stderr)
         return []
+    finally:
+        conn.close()
 
 
 # ------------------------------------------------------------------ #
