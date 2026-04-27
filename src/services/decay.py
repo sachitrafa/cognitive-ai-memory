@@ -45,4 +45,4 @@ def compute_strength(
     effective_lambda = base_lambda * (1 - importance * 0.8)
     strength = importance * math.exp(-effective_lambda * days) * (1 + recall_count * 0.2)
 
-    return round(strength, 6)
+    return round(min(1.0, strength), 6)
