@@ -184,6 +184,19 @@ def list_agents(user_id: str) -> list[dict]:
             ORDER BY created_at
         """, (user_id,))
 
+    if backend == "duckdb":
+        from src.db.connection import duckdb_rows
+        result = conn.execute("""
+            SELECT agent_id, description, can_read, can_write, created_at
+            FROM agent_registrations
+            WHERE user_id = ? AND revoked_at IS NULL
+            ORDER BY created_at
+        """, [user_id])
+        rows = duckdb_rows(result)
+        cur.close()
+        conn.close()
+        return [_row_to_agent(r) for r in rows]
+
     rows = cur.fetchall()
     cur.close()
     conn.close()
