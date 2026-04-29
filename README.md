@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/sachitrafa-yourmemory-badge.png)](https://mseep.ai/app/sachitrafa-yourmemory)
+
 <div align="center">
 
 # YourMemory
