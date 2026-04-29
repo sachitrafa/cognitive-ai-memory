@@ -3,11 +3,11 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 from dotenv import load_dotenv
-from typing import Optional
+from typing import Optional, List
 
 from src.services.extract import is_question, categorize
 from src.services.embed import embed
-from src.services.decay import compute_strength
+from src.services.decay import compute_strength, record_activity
 from src.services.resolve import resolve
 from src.db.connection import get_backend, get_conn, emb_to_db, duckdb_rows
 
@@ -25,13 +25,14 @@ _TS = {
 
 
 class MemoryRequest(BaseModel):
-    userId: str
-    content: str
-    importance: float = DEFAULT_IMPORTANCE
+    userId:       str
+    content:      str
+    importance:   float            = DEFAULT_IMPORTANCE
+    contextPaths: Optional[List[str]] = None   # spatial tagging
 
 
 class UpdateMemoryRequest(BaseModel):
-    content: str
+    content:    str
     importance: float = DEFAULT_IMPORTANCE
 
 
@@ -65,11 +66,12 @@ def add_memory(req: MemoryRequest):
 
     req.importance = max(0.0, min(1.0, req.importance))
 
-    category   = categorize(req.content)
-    embedding  = embed(req.content)
-    backend    = get_backend()
-    conn       = get_conn()
-    cur        = conn.cursor()
+    category          = categorize(req.content)
+    embedding         = embed(req.content)
+    context_paths_str = json.dumps(req.contextPaths) if req.contextPaths else None
+    backend           = get_backend()
+    conn              = get_conn()
+    cur               = conn.cursor()
 
     try:
         resolution    = resolve(req.userId, req.content, embedding, conn)
@@ -109,37 +111,42 @@ def add_memory(req: MemoryRequest):
             emb_str = emb_to_db(embedding, backend)
             if backend == "postgres":
                 cur.execute("""
-                    INSERT INTO memories (user_id, content, category, importance, embedding)
-                    VALUES (%s, %s, %s, %s, %s::vector)
+                    INSERT INTO memories (user_id, content, category, importance, embedding, context_paths)
+                    VALUES (%s, %s, %s, %s, %s::vector, %s)
                     ON CONFLICT (user_id, content) DO UPDATE
                         SET recall_count = memories.recall_count + 1, last_accessed_at = NOW()
                     RETURNING id
-                """, (req.userId, final_content, category, req.importance, emb_str))
+                """, (req.userId, final_content, category, req.importance, emb_str, context_paths_str))
                 row = cur.fetchone()
                 memory_id = row[0] if row else None
             elif backend == "duckdb":
                 conn.execute("""
-                    INSERT INTO memories (user_id, content, category, importance, embedding)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO memories (user_id, content, category, importance, embedding, context_paths)
+                    VALUES (?, ?, ?, ?, ?, ?)
                     ON CONFLICT (user_id, content) DO UPDATE
                         SET recall_count = recall_count + 1, last_accessed_at = now()
-                """, [req.userId, final_content, category, req.importance, emb_str])
+                """, [req.userId, final_content, category, req.importance, emb_str, context_paths_str])
                 result    = conn.execute("SELECT id FROM memories WHERE user_id = ? AND content = ?", [req.userId, final_content])
                 row       = result.fetchone()
                 memory_id = row[0] if row else None
             else:  # sqlite
                 cur.execute("""
-                    INSERT INTO memories (user_id, content, category, importance, embedding)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT INTO memories (user_id, content, category, importance, embedding, context_paths)
+                    VALUES (?, ?, ?, ?, ?, ?)
                     ON CONFLICT (user_id, content) DO UPDATE
                         SET recall_count = recall_count + 1, last_accessed_at = datetime('now')
-                """, (req.userId, final_content, category, req.importance, emb_str))
+                """, (req.userId, final_content, category, req.importance, emb_str, context_paths_str))
                 memory_id = cur.lastrowid
 
         conn.commit()
     finally:
         cur.close()
         conn.close()
+
+    try:
+        record_activity(req.userId.strip().lower())
+    except Exception:
+        pass
 
     return {
         "stored":   1,
@@ -163,13 +170,46 @@ def update_memory(memory_id: int, req: UpdateMemoryRequest):
     cur       = conn.cursor()
 
     try:
+        # ── Supersession: log old content before overwriting ───────────────
+        try:
+            if backend == "postgres":
+                cur.execute("SELECT user_id, content FROM memories WHERE id = %s", (memory_id,))
+                old_row = cur.fetchone()
+            elif backend == "duckdb":
+                old_row = conn.execute(
+                    "SELECT user_id, content FROM memories WHERE id = ?", [memory_id]
+                ).fetchone()
+            else:
+                cur.execute("SELECT user_id, content FROM memories WHERE id = ?", (memory_id,))
+                old_row = cur.fetchone()
+
+            if old_row:
+                owner_id, old_content = old_row[0], old_row[1]
+                if backend == "postgres":
+                    cur.execute(
+                        "INSERT INTO memory_history (memory_id, old_content, reason) VALUES (%s, %s, 'update')",
+                        (memory_id, old_content),
+                    )
+                elif backend == "duckdb":
+                    conn.execute(
+                        "INSERT INTO memory_history (memory_id, old_content, reason) VALUES (?, ?, 'update')",
+                        [memory_id, old_content],
+                    )
+                else:
+                    cur.execute(
+                        "INSERT INTO memory_history (memory_id, old_content, reason) VALUES (?, ?, 'update')",
+                        (memory_id, old_content),
+                    )
+        except Exception:
+            pass  # never block the update
+
         if backend == "postgres":
             cur.execute("""
                 UPDATE memories
                 SET content = %s, embedding = %s::vector, category = %s, importance = %s,
                     recall_count = recall_count + 1, last_accessed_at = NOW()
                 WHERE id = %s
-                RETURNING id, content, category, importance
+                RETURNING id, content, category, importance, user_id
             """, (req.content, emb_str, category, req.importance, memory_id))
             row = cur.fetchone()
         elif backend == "duckdb":
@@ -179,8 +219,11 @@ def update_memory(memory_id: int, req: UpdateMemoryRequest):
                     recall_count = recall_count + 1, last_accessed_at = now()
                 WHERE id = ?
             """, [req.content, emb_str, category, req.importance, memory_id])
-            result = conn.execute("SELECT id, content, category, importance FROM memories WHERE id = ?", [memory_id])
-            row    = result.fetchone()
+            result = conn.execute(
+                "SELECT id, content, category, importance, user_id FROM memories WHERE id = ?",
+                [memory_id],
+            )
+            row = result.fetchone()
         else:  # sqlite
             cur.execute("""
                 UPDATE memories
@@ -188,7 +231,10 @@ def update_memory(memory_id: int, req: UpdateMemoryRequest):
                     recall_count = recall_count + 1, last_accessed_at = datetime('now')
                 WHERE id = ?
             """, (req.content, emb_str, category, req.importance, memory_id))
-            cur.execute("SELECT id, content, category, importance FROM memories WHERE id = ?", (memory_id,))
+            cur.execute(
+                "SELECT id, content, category, importance, user_id FROM memories WHERE id = ?",
+                (memory_id,),
+            )
             row = cur.fetchone()
         conn.commit()
     finally:
@@ -197,6 +243,11 @@ def update_memory(memory_id: int, req: UpdateMemoryRequest):
 
     if row is None:
         raise HTTPException(status_code=404, detail=f"Memory {memory_id} not found.")
+
+    try:
+        record_activity(row[4])   # row[4] = user_id
+    except Exception:
+        pass
 
     return {"updated": 1, "id": row[0], "content": row[1], "category": row[2], "importance": row[3]}
 
