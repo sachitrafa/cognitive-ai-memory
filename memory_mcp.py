@@ -769,6 +769,33 @@ Write memories as one sentence: "Sachit prefers X" / "The project uses X" / "Pag
 _RULES_MARKER = "## YourMemory — Agent Memory Rules"
 
 
+def _write_opencode_config(path: str, exe: str, client_name: str) -> bool:
+    """Write yourmemory into OpenCode's config (uses 'mcp' key and array commands)."""
+    import json as _json
+    try:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        data = {}
+        if os.path.exists(path):
+            with open(path) as f:
+                try:
+                    data = _json.load(f)
+                except Exception:
+                    data = {}
+        data.setdefault("mcp", {})["yourmemory"] = {
+            "type":        "local",
+            "command":     [exe],
+            "enabled":     True,
+            "environment": {"PYTHONIOENCODING": "utf-8"},
+        }
+        with open(path, "w") as f:
+            _json.dump(data, f, indent=2)
+        print(f"  ✓  {client_name} → {path}")
+        return True
+    except Exception as exc:
+        print(f"  ✗  {client_name}: could not write ({exc})")
+        return False
+
+
 def _write_mcp_config(path: str, mcp_entry: dict, client_name: str) -> bool:
     """Inject yourmemory into a JSON config file, creating it if absent.
     Returns True on success."""
@@ -859,21 +886,10 @@ def setup():
 
     exe = shutil.which("yourmemory") or sys.executable.replace("python", "yourmemory")
 
-    if sys.platform == "win32":
-        # Windows: stdio pipes are unreliable — yourmemory defaults to SSE on port 3033.
-        # Clients connect via mcp-remote bridge. PYTHONIOENCODING is still set for
-        # any tools that spawn a subprocess on Windows.
-        sse_port  = int(os.getenv("PORT", 3033))
-        mcp_entry = {
-            "command": "npx",
-            "args":    ["-y", "mcp-remote", f"http://localhost:{sse_port}/sse"],
-            "env":     {"PYTHONIOENCODING": "utf-8"},
-        }
-    else:
-        mcp_entry = {
-            "command": exe,
-            "env":     {"PYTHONIOENCODING": "utf-8"},
-        }
+    mcp_entry = {
+        "command": exe,
+        "env":     {"PYTHONIOENCODING": "utf-8"},
+    }
 
     # ── 1. spaCy language model ─────────────────────────────────────────────
     print("\n[1/3] Downloading spaCy language model…")
@@ -916,17 +932,24 @@ def setup():
         if _write_mcp_config(cc_path, mcp_entry, "Claude Code"):
             wrote_any = True
 
-    # Claude Desktop (macOS)
-    cd_dir = os.path.join(home, "Library", "Application Support", "Claude")
-    if os.path.isdir(cd_dir):
-        cd_path = os.path.join(cd_dir, "claude_desktop_config.json")
-        if _write_mcp_config(cd_path, mcp_entry, "Claude Desktop"):
-            wrote_any = True
+    # Claude Desktop
+    appdata = os.getenv("APPDATA", "")
+    for cd_dir in [
+        os.path.join(home, "Library", "Application Support", "Claude"),  # macOS
+        os.path.join(appdata, "Claude"),                                  # Windows
+        os.path.join(home, ".config", "Claude"),                          # Linux
+    ]:
+        if os.path.isdir(cd_dir):
+            if _write_mcp_config(os.path.join(cd_dir, "claude_desktop_config.json"),
+                                 mcp_entry, "Claude Desktop"):
+                wrote_any = True
+            break
 
     # Cursor
     for cursor_path in [
         os.path.join(home, ".cursor", "mcp.json"),
-        os.path.join(home, "Library", "Application Support", "Cursor", "User", "settings.json"),
+        os.path.join(home, "Library", "Application Support", "Cursor", "User", "settings.json"),  # macOS
+        os.path.join(appdata, "Cursor", "User", "settings.json"),                                  # Windows
     ]:
         if os.path.exists(os.path.dirname(cursor_path)):
             if _write_mcp_config(cursor_path, mcp_entry, "Cursor"):
@@ -936,7 +959,8 @@ def setup():
     # Windsurf
     for ws_path in [
         os.path.join(home, ".codeium", "windsurf", "mcp_settings.json"),
-        os.path.join(home, "Library", "Application Support", "Windsurf", "User", "settings.json"),
+        os.path.join(home, "Library", "Application Support", "Windsurf", "User", "settings.json"),  # macOS
+        os.path.join(appdata, "Windsurf", "User", "settings.json"),                                  # Windows
     ]:
         if os.path.exists(os.path.dirname(ws_path)):
             if _write_mcp_config(ws_path, mcp_entry, "Windsurf"):
@@ -944,8 +968,13 @@ def setup():
             break
 
     # Cline (VS Code extension)
-    vscode_ext = os.path.join(home, "Library", "Application Support",
-                              "Code", "User", "globalStorage")
+    if sys.platform == "darwin":
+        vscode_ext = os.path.join(home, "Library", "Application Support",
+                                  "Code", "User", "globalStorage")
+    elif sys.platform == "win32":
+        vscode_ext = os.path.join(appdata, "Code", "User", "globalStorage")
+    else:
+        vscode_ext = os.path.join(home, ".config", "Code", "User", "globalStorage")
     if os.path.isdir(vscode_ext):
         for entry in os.listdir(vscode_ext):
             if "claude-dev" in entry or "cline" in entry.lower():
@@ -953,6 +982,12 @@ def setup():
                 if _write_mcp_config(cline_path, mcp_entry, "Cline (VS Code)"):
                     wrote_any = True
                 break
+
+    # OpenCode.ai  (~/.config/opencode/opencode.json — different schema)
+    oc_path = os.path.join(home, ".config", "opencode", "opencode.json")
+    if os.path.exists(os.path.dirname(oc_path)):
+        if _write_opencode_config(oc_path, exe, "OpenCode"):
+            wrote_any = True
 
     if not wrote_any:
         print("  (No installed clients detected automatically.)")
@@ -962,12 +997,6 @@ def setup():
     print("\n  For any other client, add this to its MCP settings:")
     for line in snippet.splitlines():
         print("  " + line)
-
-    if sys.platform == "win32":
-        sse_port = int(os.getenv("PORT", 3033))
-        print(f"\n  Windows note: YourMemory runs as an SSE server on port {sse_port}.")
-        print(f"  Start it once with:  yourmemory --sse")
-        print(f"  Or add it to Task Scheduler / startup to run automatically.")
 
     # ── 4. Inject memory rules into global agent instructions ───────────────
     print("\n[4/4] Injecting memory rules into global agent instructions…")
@@ -1124,10 +1153,12 @@ def run():
 
     if use_sse or port:
         _run_sse(port or 3000)
-    elif sys.platform == "win32" and "--stdio" not in sys.argv:
-        # Default to SSE on Windows — stdio pipes break intermittently on Windows
-        _run_sse(int(os.getenv("PORT", 3033)))
     else:
+        if sys.platform == "win32":
+            # Set stdin/stdout to binary mode so MCP framing works on Windows
+            import msvcrt
+            msvcrt.setmode(sys.stdin.fileno(), os.O_BINARY)
+            msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
         dashboard_port = int(os.getenv("YOURMEMORY_DASHBOARD_PORT", 3033))
         _start_dashboard(dashboard_port)
         asyncio.run(main())
