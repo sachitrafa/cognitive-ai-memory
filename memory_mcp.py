@@ -1149,6 +1149,15 @@ def run():
     threading.Thread(target=_ping_install, daemon=True, name="ping").start()
     _start_decay_scheduler()
 
+    # Pre-warm embedding model in background so first tool call doesn't block
+    def _warm_embed():
+        try:
+            from src.services.embed import embed
+            embed("warmup")
+        except Exception:
+            pass
+    threading.Thread(target=_warm_embed, daemon=True, name="embed-warmup").start()
+
     # SSE mode: --sse flag, PORT env var, or Windows default (stdio pipes unreliable on Windows)
     use_sse = "--sse" in sys.argv
     port    = int(os.getenv("PORT", 0))

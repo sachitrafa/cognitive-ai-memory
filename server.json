@@ -7,12 +7,12 @@
     "url": "https://github.com/sachitrafa/YourMemory",
     "source": "github"
   },
-  "version": "1.4.20",
+  "version": "1.4.21",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "yourmemory",
-      "version": "1.4.20",
+      "version": "1.4.21",
       "transport": {
         "type": "stdio"
       },
