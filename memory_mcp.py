@@ -713,10 +713,6 @@ def _start_decay_scheduler():
 
 
 async def main():
-    # Run DB migration on startup (creates tables on first run, safe to repeat)
-    from src.db.migrate import migrate
-    migrate()
-    _start_decay_scheduler()
     async with stdio_server() as (read_stream, write_stream):
         await server.run(read_stream, write_stream, server.create_initialization_options())
 
@@ -1144,7 +1140,8 @@ def run():
     from src.db.migrate import migrate
     migrate()
     _first_run_setup()
-    _ping_install()  # UUID-guarded — fires once per machine, catches existing users too
+    # Fire telemetry in background — never block MCP server startup
+    threading.Thread(target=_ping_install, daemon=True, name="ping").start()
     _start_decay_scheduler()
 
     # SSE mode: --sse flag, PORT env var, or Windows default (stdio pipes unreliable on Windows)
