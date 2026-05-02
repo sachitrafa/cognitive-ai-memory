@@ -1019,15 +1019,19 @@ def setup():
         f.write(user_id)
     print(f"  user_id → {user_id}")
 
-    _inject_memory_rules(home, user_id)
+    _inject_memory_rules(home, user_id, file=sys.stdout)
 
     print("\n✓ Setup complete. Restart your AI client to load YourMemory.\n")
 
 
-def _inject_memory_rules(home: str, user_id: str = "user") -> None:
+def _inject_memory_rules(home: str, user_id: str = "user", file=None) -> None:
     """Append memory rules to every detected global agent instruction file.
     Replaces <your_name> with the actual user_id. Skips if already present.
+    Pass file=sys.stdout for interactive setup output; defaults to stderr
+    so it is safe to call during stdio MCP mode without corrupting the stream.
     """
+    if file is None:
+        file = sys.stderr
     rules = _MEMORY_RULES.replace("<your_name>", user_id)
 
     candidates = [
@@ -1068,7 +1072,7 @@ def _inject_memory_rules(home: str, user_id: str = "user") -> None:
                 with open(path) as f:
                     existing = f.read()
             if _RULES_MARKER in existing:
-                print(f"  ✓  Already present → {path}")
+                print(f"  ✓  Already present → {path}", file=file)
                 wrote_any = True
                 continue
             os.makedirs(dir_, exist_ok=True)
@@ -1076,13 +1080,13 @@ def _inject_memory_rules(home: str, user_id: str = "user") -> None:
                 if existing and not existing.endswith("\n"):
                     f.write("\n")
                 f.write("\n" + rules)
-            print(f"  ✓  Memory rules injected → {path}")
+            print(f"  ✓  Memory rules injected → {path}", file=file)
             wrote_any = True
         except Exception as exc:
-            print(f"  ✗  Could not write to {path}: {exc}")
+            print(f"  ✗  Could not write to {path}: {exc}", file=file)
 
     if not wrote_any:
-        print("  (No global instruction files detected — copy sample_CLAUDE.md to your project's CLAUDE.md manually.)")
+        print("  (No global instruction files detected — copy sample_CLAUDE.md to your project's CLAUDE.md manually.)", file=file)
 
 
 def _first_run_setup() -> None:
