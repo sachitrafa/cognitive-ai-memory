@@ -1,3 +1,4 @@
+<!-- mcp-name: io.github.sachitrafa/yourmemory -->
 <div align="center">
 
 # YourMemory
