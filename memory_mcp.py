@@ -724,6 +724,111 @@ def print_path():
     print(path)
 
 
+def ask():
+    """Answer a query from memory using a local Ollama model — no Claude API call.
+
+    Usage: yourmemory ask "what database does this project use?"
+
+    Retrieves top-3 relevant memories, feeds them as context to a local
+    Ollama model, and streams the answer. Zero cloud API calls.
+    """
+    import urllib.request
+    import urllib.error
+
+    OLLAMA_URL    = os.getenv("YOURMEMORY_OLLAMA_URL", "http://localhost:11434")
+    OLLAMA_MODEL  = os.getenv("YOURMEMORY_OLLAMA_MODEL", "llama3.2:3b")
+    MIN_SCORE     = 0.45   # below this, not enough memory context to answer
+    TOP_K         = 3
+
+    query = " ".join(sys.argv[2:]).strip() if len(sys.argv) > 2 else ""
+    if not query:
+        print("Usage: yourmemory ask \"<your question>\"")
+        sys.exit(1)
+
+    user_id = os.getenv("YOURMEMORY_USER", "").strip()
+    if not user_id:
+        try:
+            import getpass
+            user_id = getpass.getuser()
+        except Exception:
+            user_id = "user"
+
+    # ── Step 1: retrieve memories locally ─────────────────────────────────────
+    try:
+        from src.db.migrate import migrate
+        migrate()
+        from src.services.retrieve import retrieve
+    except Exception as exc:
+        print(f"Memory store unavailable: {exc}")
+        sys.exit(1)
+
+    results  = retrieve(user_id, query, top_k=TOP_K)
+    memories = results.get("memories", [])
+
+    if not memories or memories[0].get("score", 0) < MIN_SCORE:
+        print("Not enough memory context to answer without Claude.")
+        print("Try: ask Claude, then store the answer with `store_memory`.")
+        sys.exit(0)
+
+    # ── Step 2: build grounded prompt ─────────────────────────────────────────
+    memory_lines = "\n".join(
+        f"{i+1}. {m['content']}  (confidence: {m.get('score', 0):.0%})"
+        for i, m in enumerate(memories)
+        if m.get("score", 0) >= MIN_SCORE
+    )
+
+    if not memory_lines:
+        print("Not enough memory context to answer without Claude.")
+        sys.exit(0)
+
+    prompt = f"""You are a memory assistant. Answer ONLY using the provided memories below.
+Be concise and direct. If the answer is not clearly supported by the memories, say exactly: "I don't know — ask Claude."
+
+Memories:
+{memory_lines}
+
+Question: {query}
+Answer:"""
+
+    # ── Step 3: call local Ollama model ────────────────────────────────────────
+    payload = json.dumps({
+        "model":  OLLAMA_MODEL,
+        "prompt": prompt,
+        "stream": True,
+    }).encode()
+
+    try:
+        req = urllib.request.Request(
+            f"{OLLAMA_URL}/api/generate",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            for line in resp:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    chunk = json.loads(line)
+                    token = chunk.get("response", "")
+                    if token:
+                        print(token, end="", flush=True)
+                    if chunk.get("done"):
+                        print()  # newline after stream ends
+                        break
+                except json.JSONDecodeError:
+                    continue
+
+    except urllib.error.URLError:
+        print("Ollama not running. Start it with: ollama serve")
+        print(f"Then ensure model is available: ollama pull {OLLAMA_MODEL}")
+        sys.exit(1)
+    except Exception as exc:
+        print(f"Error calling Ollama: {exc}")
+        sys.exit(1)
+
+
 _MEMORY_RULES = """
 ## YourMemory — Agent Memory Rules
 
