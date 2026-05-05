@@ -217,31 +217,14 @@ yourmemory ask "how do I deploy to kubernetes"
 # → Not enough memory context to answer without Claude.
 ```
 
-When memory is strong enough to answer confidently, a local Ollama model handles it instantly — zero tokens, zero cloud cost, zero latency. When it isn't, you get a clean decline rather than a hallucinated answer.
-
-### Requirements
-
-[Ollama](https://ollama.com) must be installed and running with at least one model:
-
-```bash
-ollama pull llama3.2:3b   # default — fast, low RAM
-```
-
-Use a different model or URL:
-
-```bash
-YOURMEMORY_OLLAMA_MODEL=llama3.1:8b yourmemory ask "..."
-YOURMEMORY_OLLAMA_URL=http://my-server:11434 yourmemory ask "..."
-```
-
-The YourMemory server starts automatically when your AI client (Claude Desktop, Cursor, etc.) connects via MCP. `yourmemory ask` routes through that already-warm server — no cold starts, no model loading overhead per query.
+When memory is strong enough to answer confidently, it responds instantly — zero tokens, zero cloud cost, zero latency. When it isn't, you get a clean decline rather than a hallucinated answer.
 
 ### Why this matters
 
 | | Mem0 / Zep / LangMem | YourMemory |
 |---|---|---|
-| "What port does the server run on?" | Full LLM API call | Local model, ~1s, $0 |
-| "What database does this project use?" | Full LLM API call | Local model, ~1s, $0 |
+| "What port does the server run on?" | Full LLM API call | Answered instantly, $0 |
+| "What database does this project use?" | Full LLM API call | Answered instantly, $0 |
 | "How do I fix a k8s deployment?" | Full LLM API call | Declines cleanly → Claude |
 | Privacy | Query sent to cloud | Query never leaves your machine |
 
@@ -370,7 +353,6 @@ recall_memory(query="staging SSL", api_key="ym_xxxx")
 | **sentence-transformers** | Local embeddings (`multi-qa-mpnet-base-dot-v1`, 768 dims) |
 | **spaCy** | Local NLP for deduplication and SVO triple extraction |
 | **APScheduler** | Automatic 24h decay job |
-| **Ollama** | Local LLM for `yourmemory ask` — zero API cost inference |
 | **PostgreSQL + pgvector** | Optional — for teams or large datasets |
 | **Neo4j** | Optional graph backend — `pip install 'yourmemory[neo4j]'` |
 
