@@ -1,7 +1,7 @@
 <!-- mcp-name: io.github.sachitrafa/yourmemory -->
 <div align="center">
 
-<img src="logo.svg.png" alt="YourMemory" width="120" />
+<img src="logo.svg.png" alt="YourMemory" width="200" />
 
 # YourMemory
 
