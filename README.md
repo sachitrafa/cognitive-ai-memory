@@ -1,11 +1,8 @@
 <!-- mcp-name: io.github.sachitrafa/yourmemory -->
 <div align="center">
-
-<img src="logo.svg.png" alt="YourMemory" width="200" />
-
-# YourMemory
-
-**Persistent memory for AI agents — built on the science of how humans remember.**
+<img src="logo.svg.png" alt="YourMemory" width="160" />
+<h1>YourMemory</h1>
+<p><strong>Persistent memory for AI agents — built on the science of how humans remember.</strong></p>
 
 [![PyPI](https://img.shields.io/pypi/v/yourmemory?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/yourmemory/)
 [![PyPI Downloads](https://img.shields.io/pypi/dm/yourmemory?color=brightgreen)](https://pypi.org/project/yourmemory/)
