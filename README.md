@@ -219,21 +219,6 @@ yourmemory ask "how do I deploy to kubernetes"
 
 When memory is strong enough to answer confidently, a local Ollama model handles it instantly — zero tokens, zero cloud cost, zero latency. When it isn't, you get a clean decline rather than a hallucinated answer.
 
-### How it works
-
-```
-yourmemory ask "..."
-    │
-    ├── POST /ask → YourMemory dashboard server (already running)
-    │       └── retrieve top-k memories (vector + graph expansion)
-    │               → keyword grounding check (query terms must appear in memories)
-    │               → score ≥ 0.55 threshold (cuts topically adjacent false matches)
-    │               → Ollama local model answers from memory context
-    │               → streams token-by-token back to terminal
-    │
-    └── server not running → "Start your AI client to activate memory."
-```
-
 ### Requirements
 
 [Ollama](https://ollama.com) must be installed and running with at least one model:
@@ -440,12 +425,6 @@ Claude / Cline / Cursor / Any MCP client
     └── update_memory(id, new_content, importance)
             └── log old content → memory_history (audit trail)
                     embed(new_content) → UPDATE → refresh graph node
-
-Terminal (yourmemory ask "...")
-    └── POST /ask → dashboard server (port 3033, already warm)
-            retrieve (vector + graph) → keyword grounding check
-            → Ollama local model → streamed answer
-            → no API call, no cloud, no tokens
 
   Vector DB (Round 1)             Graph DB (Round 2)
   DuckDB (default)                NetworkX (default)
