@@ -1,6 +1,7 @@
 <!-- mcp-name: io.github.sachitrafa/yourmemory -->
 <div align="center">
-<img src="logo.svg.png" alt="YourMemory" width="420" />
+<img src="logo.svg.png" alt="YourMemory" width="110" /><br>
+<h1>YourMemory</h1>
 
 **Persistent memory for AI agents — built on the science of how humans remember.**
 
