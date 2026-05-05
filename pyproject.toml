@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "yourmemory"
-version = "1.4.23"
+version = "1.4.24"
 description = "Persistent memory for Claude — Ebbinghaus forgetting curve, semantic deduplication, MCP-native"
 readme = "README.md"
 requires-python = ">=3.11"

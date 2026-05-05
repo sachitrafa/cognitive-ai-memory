@@ -49,22 +49,24 @@ def ask_endpoint(req: AskRequest):
     import getpass
     from src.services.retrieve import retrieve as _retrieve
 
-    OLLAMA_URL   = os.getenv("YOURMEMORY_OLLAMA_URL", "http://localhost:11434")
-    OLLAMA_MODEL = os.getenv("YOURMEMORY_OLLAMA_MODEL", "llama3.2:3b")
-    MIN_SCORE    = 0.45
+    OLLAMA_URL      = os.getenv("YOURMEMORY_OLLAMA_URL", "http://localhost:11434")
+    OLLAMA_MODEL    = os.getenv("YOURMEMORY_OLLAMA_MODEL", "llama3.2:3b")
+    MIN_SCORE       = 0.52   # direct cosine+BM25 matches (raised to cut false positives)
+    MIN_GRAPH_SCORE = 0.20   # graph-expanded nodes (capped at 0.6×0.74≈0.444)
 
     user_id = req.user_id or os.getenv("YOURMEMORY_USER", "") or getpass.getuser()
 
     results  = _retrieve(user_id, req.query, top_k=req.top_k)
     memories = results.get("memories", [])
 
-    if not memories or memories[0].get("score", 0) < MIN_SCORE:
+    direct = [m for m in memories if not m.get("via_graph")]
+    if not direct or direct[0].get("score", 0) < MIN_SCORE:
         return {"answer": "Not enough memory context to answer without Claude.", "grounded": False}
 
     memory_lines = "\n".join(
-        f"{i+1}. {m['content']}  (confidence: {m.get('score', 0):.0%})"
+        f"{i+1}. {m['content']}"
         for i, m in enumerate(memories)
-        if m.get("score", 0) >= MIN_SCORE
+        if m.get("score", 0) >= (MIN_GRAPH_SCORE if m.get("via_graph") else MIN_SCORE)
     )
 
     prompt = f"""You are a memory assistant. Answer ONLY using the provided memories below.

@@ -15,6 +15,8 @@ from src.db.connection import get_backend
 
 DEDUP_THRESHOLD     = 0.65   # below → always new memory
 REINFORCE_THRESHOLD = 0.85   # at or above → reinforce (near-identical paraphrase)
+SUBJECT_SIM_THRESHOLD = 0.60  # subject spans below this → different entities → new
+SUBJECT_WORDS = 2             # leading words used as subject proxy (1 = subject noun, 2 = noun+verb pair)
 
 
 def find_near_duplicate(user_id: str, embedding: list, conn) -> dict | None:
@@ -166,6 +168,24 @@ def merge_entities(existing_text: str, incoming_text: str) -> str:
     return f"{existing_text} with {', '.join(deduped[:-1])} and {deduped[-1]}"
 
 
+def _same_subject(text1: str, text2: str) -> bool:
+    """
+    Return True if the two sentences are likely about the same entity.
+
+    Embeds the leading words of each sentence and compares them semantically.
+    Uses the embedding model — no hardcoded word lists or grammar rules — so it
+    generalises to any sentence format or language.
+
+    "Sachit uses DuckDB"          vs "YourMemory uses DuckDB"    → False
+    "The YourMemory project uses" vs "YourMemory stores"         → True
+    "YourMemory's decay function" vs "YourMemory uses"           → True
+    """
+    from src.services.embed import embed as _embed
+    s1 = " ".join(text1.split()[:SUBJECT_WORDS])
+    s2 = " ".join(text2.split()[:SUBJECT_WORDS])
+    return _cosine(_embed(s1), _embed(s2)) >= SUBJECT_SIM_THRESHOLD
+
+
 def resolve(user_id: str, content: str, embedding: list, conn) -> dict:
     """
     Facade: decide what to do with an incoming memory.
@@ -180,6 +200,11 @@ def resolve(user_id: str, content: str, embedding: list, conn) -> dict:
     match = find_near_duplicate(user_id, embedding, conn)
 
     if match is None:
+        return {"action": "new", "content": content, "existing": None}
+
+    # Different subjects = facts about different entities — never merge across them.
+    # Uses embedding comparison on leading words, so it generalises to any format.
+    if not _same_subject(match["content"], content):
         return {"action": "new", "content": content, "existing": None}
 
     sim = match["similarity"]
