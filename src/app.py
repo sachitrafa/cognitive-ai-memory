@@ -51,7 +51,7 @@ def ask_endpoint(req: AskRequest):
 
     OLLAMA_URL      = os.getenv("YOURMEMORY_OLLAMA_URL", "http://localhost:11434")
     OLLAMA_MODEL    = os.getenv("YOURMEMORY_OLLAMA_MODEL", "llama3.2:3b")
-    MIN_SCORE       = 0.52   # direct cosine+BM25 matches (raised to cut false positives)
+    MIN_SCORE       = 0.55   # direct cosine+BM25 matches (raised to cut false positives)
     MIN_GRAPH_SCORE = 0.20   # graph-expanded nodes (capped at 0.6×0.74≈0.444)
 
     user_id = req.user_id or os.getenv("YOURMEMORY_USER", "") or getpass.getuser()
@@ -61,6 +61,19 @@ def ask_endpoint(req: AskRequest):
 
     direct = [m for m in memories if not m.get("via_graph")]
     if not direct or direct[0].get("score", 0) < MIN_SCORE:
+        return {"answer": "Not enough memory context to answer without Claude.", "grounded": False}
+
+    # Keyword grounding: if the query contains a capitalised or quoted term that
+    # appears in none of the retrieved memories, the match is topically adjacent
+    # but not specifically relevant (e.g. Fly.io memory answering a Netlify query).
+    import re as _re
+    query_terms = set(_re.findall(r'[A-Z][a-z]{2,}|[a-z]{4,}', req.query))
+    combined_memory_text = " ".join(m["content"] for m in direct).lower()
+    # Only apply the check when query has specific tech terms (≥4 chars, not common words)
+    _STOP = {"what", "does", "does", "have", "this", "that", "with", "from",
+             "best", "good", "using", "used", "many", "should", "their", "will"}
+    specific_terms = [t for t in query_terms if t.lower() not in _STOP and len(t) >= 4]
+    if specific_terms and not any(_re.search(r'\b' + _re.escape(t.lower()) + r'\b', combined_memory_text) for t in specific_terms):
         return {"answer": "Not enough memory context to answer without Claude.", "grounded": False}
 
     memory_lines = "\n".join(
