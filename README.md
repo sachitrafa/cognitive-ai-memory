@@ -200,6 +200,68 @@ Browse your memories by agent, filter by category, sort by strength, and see whi
 
 ---
 
+## Ask Without Calling the API
+
+The only memory system that can answer questions from memory **without making any LLM API call.**
+
+Every other system (Mem0, Zep, LangMem, Cognee) follows the same pattern: retrieve → inject into context → call your LLM. YourMemory has a `ask` command that short-circuits that loop entirely for trivial factual queries.
+
+```bash
+yourmemory ask "what database does this project use"
+# → YourMemory uses DuckDB locally and Postgres in production.
+
+yourmemory ask "what port does the dashboard run on"
+# → 3033
+
+yourmemory ask "how do I deploy to kubernetes"
+# → Not enough memory context to answer without Claude.
+```
+
+When memory is strong enough to answer confidently, a local Ollama model handles it instantly — zero tokens, zero cloud cost, zero latency. When it isn't, you get a clean decline rather than a hallucinated answer.
+
+### How it works
+
+```
+yourmemory ask "..."
+    │
+    ├── POST /ask → YourMemory dashboard server (already running)
+    │       └── retrieve top-k memories (vector + graph expansion)
+    │               → keyword grounding check (query terms must appear in memories)
+    │               → score ≥ 0.55 threshold (cuts topically adjacent false matches)
+    │               → Ollama local model answers from memory context
+    │               → streams token-by-token back to terminal
+    │
+    └── server not running → "Start your AI client to activate memory."
+```
+
+### Requirements
+
+[Ollama](https://ollama.com) must be installed and running with at least one model:
+
+```bash
+ollama pull llama3.2:3b   # default — fast, low RAM
+```
+
+Use a different model or URL:
+
+```bash
+YOURMEMORY_OLLAMA_MODEL=llama3.1:8b yourmemory ask "..."
+YOURMEMORY_OLLAMA_URL=http://my-server:11434 yourmemory ask "..."
+```
+
+The YourMemory server starts automatically when your AI client (Claude Desktop, Cursor, etc.) connects via MCP. `yourmemory ask` routes through that already-warm server — no cold starts, no model loading overhead per query.
+
+### Why this matters
+
+| | Mem0 / Zep / LangMem | YourMemory |
+|---|---|---|
+| "What port does the server run on?" | Full LLM API call | Local model, ~1s, $0 |
+| "What database does this project use?" | Full LLM API call | Local model, ~1s, $0 |
+| "How do I fix a k8s deployment?" | Full LLM API call | Declines cleanly → Claude |
+| Privacy | Query sent to cloud | Query never leaves your machine |
+
+---
+
 ## MCP Tools
 
 Three tools, called by your AI automatically.
@@ -266,6 +328,22 @@ recall("Python backend")
 
 **Chain-aware pruning:** A decayed memory is kept alive if any graph neighbour is above the prune threshold. Related memories age together.
 
+### Subject-Aware Deduplication
+
+When storing a new memory, YourMemory compares the incoming content against the nearest existing memory. Before merging, it verifies the two memories are about the **same entity** — not just the same topic.
+
+```
+"Sachit uses DuckDB"    vs  "YourMemory uses DuckDB"
+ subject: Sachit             subject: YourMemory
+ → different entities → stored as two separate facts ✓
+
+"YourMemory uses DuckDB"  vs  "YourMemory stores data in DuckDB"
+ subject: YourMemory           subject: YourMemory
+ → same entity → merged ✓
+```
+
+Subject comparison embeds the first two words of each sentence and compares them semantically — no hardcoded word lists, generalises to any sentence structure or language.
+
 ---
 
 ## Multi-Agent Memory
@@ -307,6 +385,7 @@ recall_memory(query="staging SSL", api_key="ym_xxxx")
 | **sentence-transformers** | Local embeddings (`multi-qa-mpnet-base-dot-v1`, 768 dims) |
 | **spaCy** | Local NLP for deduplication and SVO triple extraction |
 | **APScheduler** | Automatic 24h decay job |
+| **Ollama** | Local LLM for `yourmemory ask` — zero API cost inference |
 | **PostgreSQL + pgvector** | Optional — for teams or large datasets |
 | **Neo4j** | Optional graph backend — `pip install 'yourmemory[neo4j]'` |
 
@@ -354,13 +433,19 @@ Claude / Cline / Cursor / Any MCP client
     │
     ├── store_memory(content, importance, category?, context_paths?, visibility?, api_key?)
     │       └── question? → reject
-    │               contradiction check → update if conflict
+    │               subject-aware dedup → same entity? merge/reinforce : new
     │               embed() → INSERT → index_memory() → graph node + edges
     │               record_activity(user_id) → active days log
     │
     └── update_memory(id, new_content, importance)
             └── log old content → memory_history (audit trail)
                     embed(new_content) → UPDATE → refresh graph node
+
+Terminal (yourmemory ask "...")
+    └── POST /ask → dashboard server (port 3033, already warm)
+            retrieve (vector + graph) → keyword grounding check
+            → Ollama local model → streamed answer
+            → no API call, no cloud, no tokens
 
   Vector DB (Round 1)             Graph DB (Round 2)
   DuckDB (default)                NetworkX (default)
