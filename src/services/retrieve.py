@@ -387,15 +387,15 @@ def _fetch_by_ids(hits: list[tuple[int, float]], user_id: str, backend: str) -> 
         # Cap similarity below REINFORCE_THRESHOLD so graph-expanded nodes
         # never accidentally trigger propagate_recall — their edge_weight
         # measures connection to a seed, not direct similarity to the query.
-        # Apply W_VECTOR so graph scores live on the same scale as direct
-        # matches (0.4×bm25 + 0.6×cosine), ensuring no graph node can
-        # outrank a direct cosine match of equal or higher relevance.
+        # Do NOT multiply by strength: Round 1 scoring (W_BM25×bm25 + W_VECTOR×cosine)
+        # also excludes strength, so graph nodes must be scored consistently
+        # or they can never compete for top-k slots.
         sim = min(edge_weight, REINFORCE_THRESHOLD - 0.01)
         scored.append({
             **m,
             "similarity": sim,
             "strength":   strength,
-            "score":      W_VECTOR * sim * strength,
+            "score":      W_VECTOR * sim,
             "via_graph":  True,
         })
     return scored

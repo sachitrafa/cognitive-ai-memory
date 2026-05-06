@@ -3,7 +3,7 @@ High-level graph façade used by the rest of the application.
 
 Four public functions:
   index_memory(memory_id, user_id, content, strength, importance, category)
-      → extract SVO triples, upsert node, upsert edges
+      → extract SVO triples, upsert node, upsert edges (similarity + entity)
 
   expand_with_graph(seed_ids, user_id, top_k) → list of extra memory_ids
       → multi-hop BFS from each seed; deduplicated, sorted by edge_weight
@@ -15,6 +15,15 @@ Four public functions:
       → True only when ALL graph neighbours are also below the threshold
 
 All four are silent no-ops if the graph backend is unavailable.
+
+Edge strategy:
+  Round 1 (semantic):  cosine similarity ≥ 0.4  → weight = sim × verb_weight
+  Round 2 (entity):    shared named entity mention → weight = ENTITY_EDGE_WEIGHT (0.45)
+
+Entity edges connect memories that wouldn't score high in embedding space but
+share a bridge entity — the key pattern in multi-hop reasoning chains.
+Example: "Obama was born in Hawaii" ←→ "Hawaii became a US state in 1959"
+share the entity "Hawaii" even though their embeddings are dissimilar.
 """
 
 import sys
@@ -76,26 +85,37 @@ def index_memory(
     if embedding is not None:
         similar = _similar_nodes(memory_id, user_id, embedding, top_k=5, min_sim=0.4)
     else:
-        similar = []  # fallback handled below
-
-    if not similar:
-        return  # no semantically related neighbours — isolated node is correct
+        similar = []
 
     # ── Get verb weight from SVO triple (if spaCy available) ────────────
     triples = extract_triples(content)
-    # Use the highest-weight predicate found, or 0.5 default
     verb_weight = max((t["weight"] for t in triples), default=0.5)
     relation    = triples[0]["predicate"] if triples else "related"
 
-    # ── Create edges: weight = cosine_similarity × verb_weight ──────────
+    # ── Similarity edges: weight = cosine_similarity × verb_weight ──────
+    sim_linked: set[int] = set()
     for nbr in similar:
-        target_id  = nbr["memory_id"]
-        sim        = nbr["similarity"]
-        edge_weight = round(sim * verb_weight, 4)
+        target_id   = nbr["memory_id"]
+        edge_weight = round(nbr["similarity"] * verb_weight, 4)
         try:
             g.upsert_edge(memory_id, target_id, relation, edge_weight)
+            sim_linked.add(target_id)
         except Exception as exc:
             print(f"[graph_store] upsert_edge failed: {exc}", file=sys.stderr)
+
+    # ── Entity edges: connect memories sharing named entity mentions ──────
+    # Always apply even if a weak similarity edge already exists — entity edges
+    # can upgrade a low-weight similarity edge to ENTITY_EDGE_WEIGHT via
+    # the max() policy in upsert_edge.
+    entity_nbrs = _entity_linked_nodes(memory_id, user_id, content,
+                                       already_linked=set())   # no exclusion
+    for en in entity_nbrs:
+        target_id = en["memory_id"]
+        try:
+            g.upsert_edge(memory_id, target_id,
+                          f"entity:{en['entity']}", ENTITY_EDGE_WEIGHT)
+        except Exception as exc:
+            print(f"[graph_store] entity_edge failed: {exc}", file=sys.stderr)
 
 
 def _similar_nodes(
@@ -167,6 +187,120 @@ def _similar_nodes(
             return results[:top_k]
     except Exception as exc:
         print(f"[graph_store] _similar_nodes failed: {exc}", file=sys.stderr)
+        return []
+    finally:
+        conn.close()
+
+
+# ------------------------------------------------------------------ #
+# Entity-based neighbours (bridge-entity multi-hop linking)
+# ------------------------------------------------------------------ #
+
+# NER labels worth bridging across — skips dates/numbers that appear everywhere
+_BRIDGE_LABELS = frozenset({
+    "PERSON", "ORG", "GPE", "LOC", "FAC",
+    "PRODUCT", "EVENT", "WORK_OF_ART", "NORP", "LAW",
+})
+ENTITY_EDGE_WEIGHT = 0.55   # calibrated so score = W_VECTOR × 0.55 = 0.33, competitive with min Round 1 hit
+
+
+def _entity_linked_nodes(
+    memory_id:      int,
+    user_id:        str,
+    content:        str,
+    already_linked: set[int],
+    top_k:          int = 5,
+    min_entity_len: int = 3,
+) -> list[dict]:
+    """
+    Find existing memories that share a named entity with `content`.
+
+    Uses spaCy NER (en_core_web_sm) to extract entities, then does a
+    case-insensitive LIKE search in the vector DB.  Only returns nodes
+    not already connected via similarity edges.
+
+    Returns [{"memory_id": int, "entity": str}].
+    """
+    try:
+        from src.services.extract import _nlp
+        if _nlp is None:
+            return []
+    except Exception:
+        return []
+
+    doc = _nlp(content)
+    entities = [
+        ent.text.strip()
+        for ent in doc.ents
+        if ent.label_ in _BRIDGE_LABELS and len(ent.text.strip()) >= min_entity_len
+    ]
+    if not entities:
+        return []
+
+    # For multi-word entities, also search for word-prefix sub-strings so that
+    # "Shirley Temple Black" (F2) matches "Shirley Temple" in F1.
+    search_terms: list[str] = []
+    seen_terms: set[str] = set()
+    for ent in entities[:6]:
+        words = ent.split()
+        # Add N-word, (N-1)-word, ..., 2-word prefixes  (min 2 words to avoid noise)
+        for n in range(len(words), 1, -1):
+            candidate = " ".join(words[:n])
+            if candidate not in seen_terms:
+                seen_terms.add(candidate)
+                search_terms.append(candidate)
+        # Also add the entity as-is if it's a single word (length >= min_entity_len)
+        if len(words) == 1 and ent not in seen_terms:
+            seen_terms.add(ent)
+            search_terms.append(ent)
+
+    if not search_terms:
+        return []
+
+    from src.db.connection import get_backend, get_conn, duckdb_rows
+    backend = get_backend()
+    conn    = get_conn()
+    try:
+        found: dict[int, str] = {}
+        for entity in search_terms[:10]:  # cap total searches
+            like_pat = f"%{entity}%"
+            if backend == "duckdb":
+                result = conn.execute("""
+                    SELECT id FROM memories
+                    WHERE user_id = ? AND id != ?
+                      AND lower(content) LIKE lower(?)
+                    LIMIT ?
+                """, [user_id, memory_id, like_pat, top_k])
+                rows = duckdb_rows(result)
+                ids  = [r["id"] for r in rows]
+            elif backend == "postgres":
+                cur = conn.cursor()
+                cur.execute("""
+                    SELECT id FROM memories
+                    WHERE user_id = %s AND id != %s
+                      AND lower(content) LIKE lower(%s)
+                    LIMIT %s
+                """, (user_id, memory_id, like_pat, top_k))
+                ids = [r[0] for r in cur.fetchall()]
+                cur.close()
+            else:  # sqlite
+                cur = conn.cursor()
+                cur.execute("""
+                    SELECT id FROM memories
+                    WHERE user_id = ? AND id != ?
+                      AND lower(content) LIKE lower(?)
+                    LIMIT ?
+                """, (user_id, memory_id, like_pat, top_k))
+                ids = [r[0] for r in cur.fetchall()]
+                cur.close()
+
+            for mid in ids:
+                if mid not in already_linked and mid not in found:
+                    found[mid] = entity
+
+        return [{"memory_id": mid, "entity": ent} for mid, ent in found.items()]
+    except Exception as exc:
+        print(f"[graph_store] _entity_linked_nodes failed: {exc}", file=sys.stderr)
         return []
     finally:
         conn.close()

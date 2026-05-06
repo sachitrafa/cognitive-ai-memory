@@ -117,18 +117,74 @@ def _polarity(doc) -> int:
 def detect_contradiction(existing_text: str, incoming_text: str) -> bool:
     """
     Return True if the incoming text contradicts the existing one.
-    Detects polarity flip using verb lemmas + negation — generalizes beyond
-    a fixed antonym list by treating any positive→negative or negative→positive
-    shift on the same topic as a contradiction.
+    Detects three types of contradiction:
+
+    1. Polarity flip  — positive verb ↔ negative verb (love→hate, use→avoid)
+    2. Negation flip  — same root verb, negated in one sentence but not the other
+                        e.g. "appeared in" vs "did not appear in"
+    3. Number conflict — same context words but different 3-4 digit numbers
+                         e.g. "released in 2005" vs "released in 2012"
     """
+    import re as _re
+
     if _nlp is None:
         return False
 
-    existing_pol = _polarity(_nlp(existing_text))
-    incoming_pol = _polarity(_nlp(incoming_text))
+    doc_e = _nlp(existing_text)
+    doc_i = _nlp(incoming_text)
 
-    # Both sentences must have clear polarity and they must be opposite
-    return existing_pol != 0 and incoming_pol != 0 and existing_pol != incoming_pol
+    # ── 1. Polarity flip ─────────────────────────────────────────────────
+    existing_pol = _polarity(doc_e)
+    incoming_pol = _polarity(doc_i)
+    if existing_pol != 0 and incoming_pol != 0 and existing_pol != incoming_pol:
+        return True
+
+    # ── 2. Negation flip ──────────────────────────────────────────────────
+    # Pass A: shared ROOT verb with opposite negation ("appeared" vs "did not appear")
+    def _verb_negation_map(doc) -> dict[str, bool]:
+        result = {}
+        for token in doc:
+            if token.pos_ == "VERB" and token.dep_ in ("ROOT", "relcl", "advcl", "ccomp"):
+                negated = any(c.dep_ == "neg" for c in token.children)
+                result[token.lemma_.lower()] = negated
+        return result
+
+    neg_e = _verb_negation_map(doc_e)
+    neg_i = _verb_negation_map(doc_i)
+    for verb, e_neg in neg_e.items():
+        if verb in neg_i and neg_i[verb] != e_neg:
+            return True
+
+    # Pass B: whole-sentence negation asymmetry with shared context words
+    # Catches "Armstrong walked on Moon" vs "Armstrong was NOT involved in Moon landings"
+    # even when the two sentences use different verbs.
+    e_negated = any(c.dep_ == "neg" for c in doc_e)
+    i_negated = any(c.dep_ == "neg" for c in doc_i)
+    if e_negated != i_negated:
+        _stop = {"the", "a", "an", "in", "on", "at", "of", "and", "or", "was",
+                 "is", "were", "are", "to", "it", "its", "for", "that", "this",
+                 "not", "never", "no"}
+        words_e = {t.lemma_.lower() for t in doc_e
+                   if not t.is_stop and t.pos_ not in ("PUNCT", "NUM") and t.lemma_.lower() not in _stop}
+        words_i = {t.lemma_.lower() for t in doc_i
+                   if not t.is_stop and t.pos_ not in ("PUNCT", "NUM") and t.lemma_.lower() not in _stop}
+        if len(words_e & words_i) >= 2:
+            return True
+
+    # ── 3. Number conflict in similar context ────────────────────────────
+    nums_e = set(_re.findall(r'\b\d{3,4}\b', existing_text))
+    nums_i = set(_re.findall(r'\b\d{3,4}\b', incoming_text))
+    if nums_e and nums_i and nums_e != nums_i:
+        # Only flag as contradiction when both sentences share enough non-numeric
+        # context (≥ 4 words) to be talking about the same thing.
+        stop = {"the", "a", "an", "in", "on", "at", "of", "and", "or", "was",
+                "is", "were", "are", "to", "it", "its", "for", "that", "this"}
+        words_e = {w.lower() for w in existing_text.split() if w.lower() not in stop and not w.isdigit()}
+        words_i = {w.lower() for w in incoming_text.split() if w.lower() not in stop and not w.isdigit()}
+        if len(words_e & words_i) >= 4:
+            return True
+
+    return False
 
 
 def merge_entities(existing_text: str, incoming_text: str) -> str:

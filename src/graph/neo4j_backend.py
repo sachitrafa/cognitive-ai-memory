@@ -129,9 +129,8 @@ class Neo4jBackend(GraphBackend):
                 MERGE (a)-[r:RELATES]->(b)
                 ON CREATE SET r.relation = $relation, r.weight = $weight
                 ON MATCH  SET r.weight   = CASE
-                    WHEN r.weight + $weight * 0.1 < 1.0
-                    THEN r.weight + $weight * 0.1
-                    ELSE 1.0
+                    WHEN $weight > r.weight THEN $weight
+                    ELSE r.weight
                 END
                 """,
                 src=source_id, tgt=target_id,

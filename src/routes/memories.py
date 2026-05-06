@@ -143,6 +143,31 @@ def add_memory(req: MemoryRequest):
         cur.close()
         conn.close()
 
+    if memory_id is not None:
+        try:
+            from src.graph.graph_store import index_memory as _graph_index
+            from src.services.decay import compute_strength as _cs
+            from src.services.utils import parse_dt as _pdt
+            from datetime import datetime, timezone as _tz
+            _strength = _cs(
+                last_accessed_at=datetime.now(_tz.utc),
+                recall_count=0,
+                importance=req.importance,
+                category=category,
+            )
+            _graph_index(
+                memory_id=memory_id,
+                user_id=req.userId,
+                content=final_content,
+                strength=_strength,
+                importance=req.importance,
+                category=category,
+                embedding=list(embedding),
+            )
+        except Exception as _ge:
+            import sys as _sys
+            print(f"[graph] index_memory failed: {_ge}", file=_sys.stderr)
+
     try:
         record_activity(req.userId.strip().lower())
     except Exception:
@@ -243,6 +268,29 @@ def update_memory(memory_id: int, req: UpdateMemoryRequest):
 
     if row is None:
         raise HTTPException(status_code=404, detail=f"Memory {memory_id} not found.")
+
+    try:
+        from src.graph.graph_store import index_memory as _graph_index
+        from src.services.decay import compute_strength as _cs
+        from datetime import datetime, timezone as _tz
+        _strength = _cs(
+            last_accessed_at=datetime.now(_tz.utc),
+            recall_count=0,
+            importance=req.importance,
+            category=row[2],
+        )
+        _graph_index(
+            memory_id=row[0],
+            user_id=row[4],
+            content=row[1],
+            strength=_strength,
+            importance=req.importance,
+            category=row[2],
+            embedding=list(embedding),
+        )
+    except Exception as _ge:
+        import sys as _sys
+        print(f"[graph] index_memory (update) failed: {_ge}", file=_sys.stderr)
 
     try:
         record_activity(row[4])   # row[4] = user_id

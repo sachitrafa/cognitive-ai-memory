@@ -91,9 +91,10 @@ class NetworkXBackend(GraphBackend):
                     relation: str, weight: float) -> None:
         with self._lock:
             if self._G.has_edge(source_id, target_id):
-                # Strengthen existing edge slightly
-                existing = self._G[source_id][target_id].get("weight", weight)
-                self._G[source_id][target_id]["weight"] = min(1.0, existing + weight * 0.1)
+                existing = self._G[source_id][target_id].get("weight", 0.0)
+                # Use max so a strong entity edge (0.55) can upgrade a weak
+                # similarity edge (e.g. 0.22) rather than just bumping it slightly.
+                self._G[source_id][target_id]["weight"] = min(1.0, max(existing, weight))
             else:
                 self._G.add_edge(source_id, target_id,
                                   relation=relation,

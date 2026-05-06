@@ -149,9 +149,41 @@ Decay is intentionally excluded from the ranking formula — multiplying cosine 
 
 ---
 
-## Dataset Reference
+---
+
+## 5. Multi-Hop Reasoning — HotpotQA (6 May 2026)
+
+**Dataset:** [HotpotQA](https://hotpotqa.github.io/) distractor set — 7,405 questions each requiring **two** supporting facts from different Wikipedia articles.
+
+**Script:** [`benchmarks/hotpotqa_reasoning.py`](https://github.com/sachitrafa/YourMemory/blob/main/benchmarks/hotpotqa_reasoning.py)
+
+**Design:** Store both gold supporting facts as separate memories. Query with the original multi-hop question. Score: BOTH_FOUND (both facts in top-5), ONE_FOUND, NONE_FOUND.
+
+**Metric:** `BOTH_FOUND@5` — both supporting facts surfaced in the top-5 results.
+
+**Why this is hard:** Multi-hop questions require connecting facts about different entities. Example: *"What government position was held by the woman who portrayed Corliss Archer?"* — Fact 1 names Shirley Temple; Fact 2 (about Shirley Temple Black's role as Chief of Protocol) can only be found by following that bridge entity. Pure embedding similarity between the two facts is too low to connect them via Round 1 vector search alone.
+
+**What YourMemory does:** Entity-based graph edges link memories that share named entity mentions (spaCy NER), regardless of embedding similarity. When Fact 1 is retrieved in Round 1, Fact 2 is connected via the shared entity and surfaces in the merged top-5.
+
+### Results (200 questions)
+
+| System | BOTH_FOUND@5 | bridge | comparison |
+|--------|:------------:|:------:|:----------:|
+| **YourMemory** (vector + BM25 + entity graph) | **71.5%** | **69%** | **85%** |
+| YourMemory (no entity edges — similarity graph only) | 59.5% | 55% | 82% |
+
+Entity-based graph edges add **+12 pp** on overall multi-hop coverage, with the largest gain on bridge-type questions (+14 pp) where the two facts share a bridge entity that doesn't appear in the query.
+
+---
+
+## Dataset References
 
 > Maharana, A., Lee, D., Tulyakov, S., Bansal, M., Barbieri, F., & Fang, Y. (2024).
 > **LoCoMo: Long Context Multimodal Benchmark for Dialogue.**
 > *SNAP Research.*
 > GitHub: [https://github.com/snap-research/locomo](https://github.com/snap-research/locomo)
+
+> Yang, Z., Qi, P., Zhang, S., Bengio, Y., Cohen, W., Salakhutdinov, R., & Manning, C. D. (2018).
+> **HotpotQA: A Dataset for Diverse, Explainable Multi-hop Question Answering.**
+> *EMNLP 2018.*
+> GitHub: [https://github.com/hotpotqa/hotpot](https://github.com/hotpotqa/hotpot)

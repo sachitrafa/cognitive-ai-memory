@@ -111,20 +111,48 @@ def find_near_duplicate(user_id: str, embedding: list, conn) -> dict | None:
 
 def detect_contradiction(existing_text: str, incoming_text: str) -> bool:
     """
-    Fallback contradiction detection using regex patterns.
-    Return True if the incoming text contradicts the existing one.
+    Fallback contradiction detection (no spaCy).
+    Detects three patterns:
+    1. Polarity patterns (regex)
+    2. Negation flip: "X verb Y" vs "X did not/never verb Y"
+    3. Number conflict: same context, different 3-4 digit numbers
     """
     existing_lower = existing_text.lower()
     incoming_lower = incoming_text.lower()
-    
+
+    # ── 1. Polarity patterns ─────────────────────────────────────────────
     for positive_pattern, negative_pattern in _CONTRADICTION_PATTERNS:
-        # Check if existing has positive and incoming has negative
         if re.search(positive_pattern, existing_lower) and re.search(negative_pattern, incoming_lower):
             return True
-        # Check if existing has negative and incoming has positive  
         if re.search(negative_pattern, existing_lower) and re.search(positive_pattern, incoming_lower):
             return True
-    
+
+    # ── 2. Explicit negation flip ─────────────────────────────────────────
+    negation_markers = (r'\bnot\b', r'\bnever\b', r'\bno\b', r"\bdidn't\b",
+                        r"\bwasn't\b", r"\bweren't\b", r"\bhasn't\b", r"\bhaven't\b")
+    e_negated = any(re.search(p, existing_lower) for p in negation_markers)
+    i_negated = any(re.search(p, incoming_lower) for p in negation_markers)
+    if e_negated != i_negated:
+        # One sentence is negated and the other is not — check they share context
+        stop = {"the", "a", "an", "in", "on", "at", "of", "and", "or", "was",
+                "is", "were", "are", "to", "it", "its", "for", "that", "this",
+                "not", "never", "no"}
+        words_e = {w.strip('.,;:') for w in existing_lower.split() if w not in stop}
+        words_i = {w.strip('.,;:') for w in incoming_lower.split() if w not in stop}
+        if len(words_e & words_i) >= 3:
+            return True
+
+    # ── 3. Number conflict in similar context ─────────────────────────────
+    nums_e = set(re.findall(r'\b\d{3,4}\b', existing_text))
+    nums_i = set(re.findall(r'\b\d{3,4}\b', incoming_text))
+    if nums_e and nums_i and nums_e != nums_i:
+        stop = {"the", "a", "an", "in", "on", "at", "of", "and", "or", "was",
+                "is", "were", "are", "to", "it", "its", "for", "that", "this"}
+        words_e = {w.lower() for w in existing_text.split() if w.lower() not in stop and not w.isdigit()}
+        words_i = {w.lower() for w in incoming_text.split() if w.lower() not in stop and not w.isdigit()}
+        if len(words_e & words_i) >= 4:
+            return True
+
     return False
 
 

@@ -656,6 +656,23 @@ async def call_tool(name: str, arguments: dict) -> list[types.TextContent]:
             return [types.TextContent(type="text", text=json.dumps(
                 {"error": f"Memory {memory_id} not found."}))]
 
+        # Re-index updated content in graph (best-effort)
+        if row is not None:
+            try:
+                from src.graph.graph_store import index_memory as _graph_index
+                _graph_index(
+                    memory_id=row[0],
+                    user_id=user_id_owner,
+                    content=row[1],
+                    strength=importance,
+                    importance=importance,
+                    category=row[2],
+                    embedding=list(embedding),
+                )
+            except Exception as _ge:
+                import sys as _sys
+                print(f"[graph] index_memory (update) failed: {_ge}", file=_sys.stderr)
+
         # ── Record activity ────────────────────────────────────────────────
         try:
             from src.services.decay import record_activity
