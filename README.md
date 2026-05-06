@@ -43,6 +43,15 @@ Every session, your AI assistant starts from zero. It asks the same questions, f
 |--------|:------------:|:------:|
 | **YourMemory** (full stack · `multi-qa-mpnet-base-dot-v1`) | **85%** | **87%** |
 
+### HotpotQA — 200 multi-hop questions requiring two facts from different articles
+
+| System | BOTH_FOUND@5 |
+|--------|:------------:|
+| **YourMemory** (vector + BM25 + entity graph) | **71.5%** |
+| YourMemory (similarity graph only — no entity edges) | 59.5% |
+
+Entity-based graph edges link memories that share named entity mentions — enabling the system to follow a chain of facts rather than just retrieve by similarity.
+
 Full methodology in [BENCHMARKS.md](BENCHMARKS.md). Writeup: [I built memory decay for AI agents using the Ebbinghaus forgetting curve](https://dev.to/sachit_mishra_686a94d1bb5/i-built-memory-decay-for-ai-agents-using-the-ebbinghaus-forgetting-curve-1b0e).
 
 ---
@@ -180,23 +189,75 @@ Your AI now recalls what it learned in previous sessions, without you telling it
 
 ## Memory Dashboard
 
-Every YourMemory instance ships with a built-in browser UI. When the MCP server is running, open:
+Every YourMemory instance ships with two built-in browser UIs — no extra setup, no separate process. They start automatically when the MCP server starts.
+
+---
+
+### Memory Browser — `http://localhost:3033/ui`
+
+A full read-only view of everything stored in memory for any user.
+
+**Stats bar** — four live counters at the top:
+
+| Counter | What it means |
+|---------|---------------|
+| Total memories | All stored memories for the active view |
+| Strong ≥ 50% | Healthy — will survive the next decay cycle |
+| Fading 5–50% | Weakening — will survive but need reinforcement |
+| Near prune < 10% | At risk — will be deleted in the next 24h pruning job |
+
+**Agent tabs** — switch between views without reloading:
+- `🧠 All` — every memory for the user
+- `👤 User` — only memories stored by the user directly (no agent writes)
+- `🤖 <agent-id>` — one tab per registered agent, showing only that agent's memories
+
+**Filters and sorting:**
+
+| Control | Options |
+|---------|---------|
+| Category | All · fact · strategy · assumption · failure |
+| Sort | Strength (default) · Most recent · Recall count |
+
+**Memory cards** — each card shows:
+- Full memory content
+- Strength bar — color-coded green → cyan → yellow → red as strength falls
+- Strength percentage, category badge, agent badge (👤 user or 🤖 agent-id)
+- Memory ID, importance score, recall count, last accessed date
+
+**URL shortcut** — pass `?user=<id>` to auto-load on open:
+```
+http://localhost:3033/ui?user=sachit
+```
+
+---
+
+### Graph Visualization — `http://localhost:3033/graph`
+
+An interactive map of how memories are connected. Requires a `memoryId` to use as the center node.
 
 ```
-http://localhost:3033/ui
+http://localhost:3033/graph?memoryId=42&userId=sachit&depth=2
 ```
 
-Browse your memories by agent, filter by category, sort by strength, and see which memories are fading.
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `memoryId` | required | Center node to visualise from |
+| `userId` | `sachit` | User whose memories to load |
+| `depth` | `2` | BFS traversal depth (1–3) |
 
-<details>
-<summary><strong>What you'll see</strong></summary>
+**What you see:**
+- The root memory as a larger cyan node
+- Connected memories as smaller nodes, color-coded by category — green (strategy), red (failure), purple (assumption), blue (fact)
+- Edges weighted by semantic similarity — thicker edges = stronger connection
+- Click any node to see its full content in the side panel
+- Drag, zoom, and reposition the graph freely
 
-- **Strength bars** — how close each memory is to being pruned
-- **Agent tabs** — switch between All / User / per-agent views
-- **Category badges** — fact · strategy · assumption · failure
-- **Stats** — total, strong (≥ 50%), fading (5–50%), near prune (< 10%)
+**JSON API** — get the raw graph data for any memory:
+```
+http://localhost:3033/graph/data?memoryId=42&userId=sachit&depth=2
+```
 
-</details>
+Returns Cytoscape.js-compatible nodes and edges with weights, categories, and root flags.
 
 ---
 
