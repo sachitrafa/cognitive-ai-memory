@@ -55,7 +55,7 @@ HotpotQA tests whether a memory system can connect a chain of facts — not just
 - [GitHub](https://github.com/sachitrafa/YourMemory)
 - [PyPI](https://pypi.org/project/yourmemory/)
 - [Benchmarks](https://github.com/sachitrafa/YourMemory/blob/main/BENCHMARKS.md)
-- [Homepage](https://yourmemory.ai)
+- [Homepage](https://yourmemoryai.vercel.app/)
 
 ## Install
 
