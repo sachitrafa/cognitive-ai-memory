@@ -93,7 +93,7 @@ Temporal-reasoning and multi-session questions are the hardest — the system re
 
 ## 3. Multi-Hop Reasoning — HotpotQA (6 May 2026)
 
-**Dataset:** [HotpotQA](https://hotpotqa.github.io/) distractor set — 113,000 questions each requiring **two** supporting facts from **different** Wikipedia articles. Each question is paired with 8 distractor paragraphs alongside the 2 gold paragraphs.
+**Dataset:** [HotpotQA](https://hotpotqa.github.io/) distractor set — 7,405 dev questions each requiring **two** supporting facts from **different** Wikipedia articles. Each question is paired with 8 distractor paragraphs alongside the 2 gold paragraphs.
 
 **Script:** [`benchmarks/hotpotqa_reasoning.py`](https://github.com/sachitrafa/YourMemory/blob/main/benchmarks/hotpotqa_reasoning.py)
 
