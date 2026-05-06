@@ -1,0 +1,70 @@
+# YourMemory
+
+> Persistent memory for AI agents — built on the science of how humans remember.
+
+YourMemory is an open-source, local-first memory layer for AI agents (Claude, Cursor, Cline, Windsurf, and any MCP-compatible client). It gives AI assistants persistent memory across sessions using the Ebbinghaus forgetting curve, hybrid BM25 + vector retrieval, and an entity-based knowledge graph. One `pip install`, zero infrastructure required.
+
+## Key Features
+
+- **Ebbinghaus decay** — memories fade exponentially over time; importance and recall frequency slow that decay. Weak memories are pruned automatically every 24 hours.
+- **Hybrid retrieval** — BM25 keyword scoring + cosine vector similarity, combined as `0.4 × bm25 + 0.6 × cosine`.
+- **Entity graph** — spaCy NER links memories that share named entities, enabling multi-hop reasoning across facts that have low embedding similarity.
+- **Subject-aware deduplication** — incoming memories are merged, reinforced, or replaced based on semantic similarity and contradiction detection. Never merges facts about different entities.
+- **Spatial memory** — memories tagged with file/directory paths get a retrieval boost when the agent is working in that context.
+- **`yourmemory ask`** — CLI command that answers factual questions from memory using a local Ollama model. Zero cloud API calls, zero tokens.
+- **Memory dashboard** — built-in browser UI at `localhost:3033/ui` to browse, filter, and sort memories by strength, category, and agent.
+- **Graph visualization** — interactive Cytoscape.js graph at `localhost:3033/graph` showing how memories are connected.
+- **Multi-agent support** — isolated private memories per agent with controlled access to shared context.
+
+## Benchmark Results
+
+| Benchmark | Metric | Score |
+|-----------|--------|-------|
+| LongMemEval-S (500 questions) | Recall-all@5 | 84.8% |
+| LoCoMo-10 (1,534 QA pairs) | Recall@5 | 59% vs Zep Cloud 28% |
+| HotpotQA distractor (200 multi-hop questions) | BOTH_FOUND@5 | 71.5% |
+
+HotpotQA tests whether a memory system can connect a chain of facts — not just retrieve similar ones. Entity graph edges add +12 pp over similarity-only retrieval on bridge-type questions.
+
+## Tech Stack
+
+- **Database:** DuckDB (default, zero setup) or PostgreSQL + pgvector
+- **Graph:** NetworkX (default) or Neo4j
+- **Embeddings:** `multi-qa-mpnet-base-dot-v1` via sentence-transformers (local, 768 dims)
+- **NLP:** spaCy (local, for deduplication and entity extraction)
+- **Protocol:** MCP (Model Context Protocol) stdio server
+- **API:** FastAPI HTTP server on port 3033
+
+## MCP Tools
+
+- `recall_memory(query, user_id, current_path?)` — hybrid retrieval with graph expansion and spatial boost
+- `store_memory(content, importance, category?, context_paths?, visibility?)` — embed, deduplicate, store, index
+- `update_memory(memory_id, new_content, importance)` — re-embed, replace, log to audit trail
+
+## Memory Categories and Decay Rates
+
+| Category | Half-life | Use case |
+|----------|-----------|----------|
+| strategy | ~38 days | Successful patterns, approaches that worked |
+| fact | ~24 days | Preferences, identity, project decisions |
+| assumption | ~19 days | Inferred, uncertain context |
+| failure | ~11 days | Errors, environment-specific issues |
+
+## Links
+
+- [GitHub](https://github.com/sachitrafa/YourMemory)
+- [PyPI](https://pypi.org/project/yourmemory/)
+- [Benchmarks](https://github.com/sachitrafa/YourMemory/blob/main/BENCHMARKS.md)
+- [Homepage](https://yourmemory.ai)
+
+## Install
+
+```bash
+pip install yourmemory
+yourmemory-path   # prints config block to paste into your AI client
+```
+
+## Author
+
+Sachit Misra — mishrasachit1@gmail.com
+License: CC-BY-NC-4.0 (free for personal, education, research, open-source; commercial use requires agreement)
