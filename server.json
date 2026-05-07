@@ -17,8 +17,8 @@
         "type": "stdio"
       },
       "argumentsJsonSchema": "{}",
-      "buildSteps": "",
-      "cmdArguments": "",
+      "buildSteps": "pip install yourmemory",
+      "cmdArguments": "--stdio",
       "environmentVariables": [
         {
           "name": "PYTHONIOENCODING",
