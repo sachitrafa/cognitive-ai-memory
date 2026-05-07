@@ -16,6 +16,9 @@
       "transport": {
         "type": "stdio"
       },
+      "argumentsJsonSchema": "{}",
+      "buildSteps": "",
+      "cmdArguments": "",
       "environmentVariables": [
         {
           "name": "PYTHONIOENCODING",
